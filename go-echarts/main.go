@@ -9,15 +9,18 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"sort"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
 type column_data struct {
-	Name   string           `json:"name"`
-	Items  string           `json:"items"`
-	Keymap []map[string]int `json:"data"`
+	Type string `json:"type"`
+	Name string `json:"name"`
+	//Keymap []map[string]int `json:"data"`
+	Keymap map[string]int `json:"data"`
 }
 
 var (
@@ -25,6 +28,7 @@ var (
 	tcp_port int
 	//port    = flag.Int("port", 0, "服务端口设置参数为：-port=80")
 	jsonconfig = flag.String("jsonfile", "", "读取的jsonfile文件")
+	viewtype   = flag.String("viewtype", "", "bar/scatter")
 )
 
 func init() {
@@ -39,6 +43,16 @@ func init() {
 	flag.Parse()
 }
 
+var player = []string{"Kobe", "Jordan", "Iverson", "LeBron", "Wade", "McGrady"}
+
+func generateEffectScatterItems() []opts.EffectScatterData {
+	items := make([]opts.EffectScatterData, 0)
+	for i := 0; i < len(player); i++ {
+		items = append(items, opts.EffectScatterData{Value: rand.Intn(100)})
+	}
+	return items
+}
+
 // 数据生成数据
 func generateBarItems() []opts.BarData {
 	items := make([]opts.BarData, 0)
@@ -48,8 +62,7 @@ func generateBarItems() []opts.BarData {
 	return items
 }
 
-//func main() {
-func httpserver(w http.ResponseWriter, _ *http.Request) {
+func example(w http.ResponseWriter) {
 	// 1.New 一个条形图对象
 	bar := charts.NewBar()
 	// 2.设置 标题 和 子标题
@@ -70,29 +83,128 @@ func httpserver(w http.ResponseWriter, _ *http.Request) {
 	bar.Render(w)
 }
 
-func jsonload(path string) error {
-	var columnlist column_data
+func jsonscatter(coldata []column_data) *components.Page {
+	page := components.NewPage()
+	es := charts.NewEffectScatter()
+	es.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: "basic EffectScatter example"}),
+	)
+	es.SetXAxis(player).AddSeries("Dunk", generateEffectScatterItems())
+	page.AddCharts(
+		es,
+		//esEffectStyle(),
+	)
+	return page
+}
+
+func jsonbar(coldata []column_data) *charts.Bar {
+	var data1 []opts.BarData
+	var data2 []opts.BarData
+	var item []string
+	// 1.New 一个条形图对象
+	bar := charts.NewBar()
+	// 2.设置 标题 和 子标题
+	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+		Title:    "perf kvm",
+		Subtitle: "data",
+	}))
+
+	bar.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{
+			Title:      "style options",
+			Right:      "center",
+			TitleStyle: &opts.TextStyle{Color: "#eee"},
+		}),
+		charts.WithXAxisOpts(opts.XAxis{
+			AxisLabel: &opts.AxisLabel{
+				Show:       true,
+				Rotate:     30,
+				Interval:   "0",
+				FontSize:   "8",
+				LineHeight: "40"},
+		}),
+	)
+
+	for k, val := range coldata[0].Keymap {
+		if val > 0 || coldata[1].Keymap[k] > 0 {
+			item = append(item, k)
+		}
+	}
+
+	sort.Strings(item)
+	for _, str := range item {
+		data1 = append(data1, opts.BarData{Value: coldata[0].Keymap[str]})
+		data2 = append(data2, opts.BarData{Value: coldata[1].Keymap[str]})
+	}
+
+	//fmt.Print(item)
+	//fmt.Print(data1)
+	//fmt.Print(data2)
+
+	bar.SetXAxis(item).
+		AddSeries(coldata[0].Name, data1).
+		AddSeries(coldata[1].Name, data2).
+		SetSeriesOptions()
+	return bar
+}
+
+func jsonload(path string) ([]column_data, error) {
+	//testmap1 := map[string]int{"aa": 1, "bb": 2}
+	//var columnlist []column_data
 	//columnlist := column_data{}
-	//columnlist := make([]column_data, 0)
+	columnlist := make([]column_data, 0)
+	//columnlist := []column_data{{Type: "aa", Name: "bb", Keymap: testmap1}, {Type: "cc", Name: "dd"}}
 	//columnlist := map[string]int{}
+
 	f, err := os.Open(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	filebuf, err := ioutil.ReadAll(f)
 
-	err = json.Unmarshal([]byte(filebuf), &columnlist)
-	fmt.Print(columnlist)
+	//jsondata, _ := json.Marshal(columnlist)
+	json.Unmarshal([]byte(filebuf), &columnlist)
+	//fmt.Print(columnlist[0])
+	//for k, v := range columnlist[0].Keymap {
+	//	fmt.Println("zz", k, v)
+	//}
+	//bar := jsonbar(columnlist)
+	//fmt.Print(string(jsondata))
 
-	return nil
+	return columnlist, nil
+}
+
+//func main() {
+func httpserver(w http.ResponseWriter, _ *http.Request) {
+	if *jsonconfig != "" {
+		fmt.Println("load", *jsonconfig)
+		coldata, err := jsonload(*jsonconfig)
+		if err != nil {
+			fmt.Println("json data transfer error")
+			return
+		}
+
+		if *viewtype == "bar" {
+			bar := jsonbar(coldata)
+			bar.Render(w)
+		} else if *viewtype == "scatter" {
+			page := jsonscatter(coldata)
+			page.Render(w)
+		}
+
+	} else {
+		example(w)
+	}
 }
 
 func main() {
-	if *jsonconfig != "" {
-		fmt.Println("load", *jsonconfig)
-		jsonload(*jsonconfig)
-	}
+	/*
+		if *jsonconfig != "" {
+			fmt.Println("load", *jsonconfig)
+			jsonload(*jsonconfig)
+		}
+	*/
 	http.HandleFunc("/", httpserver)
 	fmt.Println("start http server 8081")
 	http.ListenAndServe("10.231.82.67:8081", nil)
