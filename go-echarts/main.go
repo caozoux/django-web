@@ -12,7 +12,6 @@ import (
 	"sort"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
-	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
@@ -20,7 +19,14 @@ type column_data struct {
 	Type string `json:"type"`
 	Name string `json:"name"`
 	//Keymap []map[string]int `json:"data"`
-	Keymap map[string]int `json:"data"`
+	Keymap map[string]string `json:"data"`
+}
+
+type scatter_data struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+	//Keymap []map[string]int `json:"data"`
+	Data []int `json:"data"`
 }
 
 var (
@@ -28,6 +34,8 @@ var (
 	tcp_port int
 	//port    = flag.Int("port", 0, "服务端口设置参数为：-port=80")
 	jsonconfig = flag.String("jsonfile", "", "读取的jsonfile文件")
+	data1      = flag.String("data1", "", "测试性能对比数据1")
+	data2      = flag.String("data2", "", "测试对比性能数据2")
 	viewtype   = flag.String("viewtype", "", "bar/scatter")
 )
 
@@ -83,18 +91,36 @@ func example(w http.ResponseWriter) {
 	bar.Render(w)
 }
 
-func jsonscatter(coldata []column_data) *components.Page {
-	page := components.NewPage()
-	es := charts.NewEffectScatter()
-	es.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{Title: "basic EffectScatter example"}),
+func jsonscatter(data []scatter_data) *charts.Scatter {
+	var sports []string
+	scatter := charts.NewScatter()
+	scatter.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: "basic scatter example"}),
+		charts.WithLegendOpts(opts.Legend{Show: true}),
 	)
-	es.SetXAxis(player).AddSeries("Dunk", generateEffectScatterItems())
-	page.AddCharts(
-		es,
-		//esEffectStyle(),
-	)
-	return page
+
+	size := len(data[0].Data)
+	for i := 0; i < size; i++ {
+		sports = append(sports, fmt.Sprint(i))
+	}
+
+	items1 := make([]opts.ScatterData, 0)
+	items2 := make([]opts.ScatterData, 0)
+	for i := 0; i < size; i++ {
+		items1 = append(items1, opts.ScatterData{
+			Value:      data[0].Data[i],
+			SymbolSize: 3,
+		})
+		items2 = append(items2, opts.ScatterData{
+			Value:      data[1].Data[i],
+			SymbolSize: 3,
+		})
+	}
+	scatter.SetXAxis(sports).
+		AddSeries(data[0].Name, items1).
+		AddSeries(data[1].Name, items2)
+
+	return scatter
 }
 
 func jsonbar(coldata []column_data) *charts.Bar {
@@ -105,16 +131,15 @@ func jsonbar(coldata []column_data) *charts.Bar {
 	bar := charts.NewBar()
 	// 2.设置 标题 和 子标题
 	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
-		Title:    "perf kvm",
+		Title:    coldata[0].Type,
 		Subtitle: "data",
 	}))
 
+	fmt.Print(coldata[0])
 	bar.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{
-			Title:      "style options",
-			Right:      "center",
-			TitleStyle: &opts.TextStyle{Color: "#eee"},
-		}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
+		charts.WithLegendOpts(opts.Legend{Right: "80%"}),
+		charts.WithLegendOpts(opts.Legend{Show: true}),
 		charts.WithXAxisOpts(opts.XAxis{
 			AxisLabel: &opts.AxisLabel{
 				Show:       true,
@@ -125,10 +150,10 @@ func jsonbar(coldata []column_data) *charts.Bar {
 		}),
 	)
 
-	for k, val := range coldata[0].Keymap {
-		if val > 0 || coldata[1].Keymap[k] > 0 {
-			item = append(item, k)
-		}
+	for k, _ := range coldata[0].Keymap {
+		//if val > 0 || coldata[1].Keymap[k] > 0 {
+		item = append(item, k)
+		//}
 	}
 
 	sort.Strings(item)
@@ -144,27 +169,69 @@ func jsonbar(coldata []column_data) *charts.Bar {
 	bar.SetXAxis(item).
 		AddSeries(coldata[0].Name, data1).
 		AddSeries(coldata[1].Name, data2).
-		SetSeriesOptions()
+		SetSeriesOptions(
+		/*charts.WithLabelOpts(opts.Label{
+			Show:     true,
+			Position: "top",
+		}),
+		*/
+		)
 	return bar
 }
 
-func jsonload(path string) ([]column_data, error) {
-	//testmap1 := map[string]int{"aa": 1, "bb": 2}
-	//var columnlist []column_data
-	//columnlist := column_data{}
-	columnlist := make([]column_data, 0)
-	//columnlist := []column_data{{Type: "aa", Name: "bb", Keymap: testmap1}, {Type: "cc", Name: "dd"}}
-	//columnlist := map[string]int{}
+func ScatterShowJsontemp() {
+	data := scatter_data{Type: "aa", Name: "bb", Data: []int{1, 2, 3}}
+	jsondata, _ := json.Marshal(data)
+	fmt.Print(string(jsondata))
+}
+
+func scatterjsonload(path string) (scatter_data, error) {
+	var data scatter_data
 
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return scatter_data{}, err
 	}
 
 	filebuf, err := ioutil.ReadAll(f)
 
+	err = json.Unmarshal([]byte(filebuf), &data)
+	if err != nil {
+		fmt.Printf("json Unmarshal error")
+		return scatter_data{}, err
+	}
+
+	json.Unmarshal([]byte(filebuf), &data)
+	//fmt.Print(data)
+
+	return data, nil
+}
+
+func jsonload(path string) (column_data, error) {
+	//testmap1 := map[string]int{"aa": 1, "bb": 2}
+	var columnlist column_data
+	//columnlist := column_data{}
+	//columnlist := make([]column_data, 0)
+	//columnlist := []column_data{{Type: "aa", Name: "bb", Keymap: testmap1}, {Type: "cc", Name: "dd"}}
+	//columnlist := map[string]int{}
+	//var columndata column_data
+
+	f, err := os.Open(path)
+	if err != nil {
+		return column_data{}, err
+	}
+
+	filebuf, err := ioutil.ReadAll(f)
+	//fmt.Printf("zz filebuf:%s \n", filebuf)
+
 	//jsondata, _ := json.Marshal(columnlist)
-	json.Unmarshal([]byte(filebuf), &columnlist)
+	err = json.Unmarshal([]byte(filebuf), &columnlist)
+	if err != nil {
+		fmt.Printf("json Unmarshal error")
+	} else {
+		//fmt.Print(columndata)
+	}
+	//json.Unmarshal([]byte(filebuf), &columnlist)
 	//fmt.Print(columnlist[0])
 	//for k, v := range columnlist[0].Keymap {
 	//	fmt.Println("zz", k, v)
@@ -175,24 +242,64 @@ func jsonload(path string) ([]column_data, error) {
 	return columnlist, nil
 }
 
+func generateScatterItems() []opts.ScatterData {
+	items := make([]opts.ScatterData, 0)
+	for i := 0; i < 200; i++ {
+		items = append(items, opts.ScatterData{
+			Value:        rand.Intn(100),
+			Symbol:       "roundRect",
+			SymbolSize:   5,
+			SymbolRotate: 1,
+		})
+	}
+	return items
+}
+
 //func main() {
 func httpserver(w http.ResponseWriter, _ *http.Request) {
-	if *jsonconfig != "" {
-		fmt.Println("load", *jsonconfig)
-		coldata, err := jsonload(*jsonconfig)
-		if err != nil {
-			fmt.Println("json data transfer error")
-			return
-		}
-
-		if *viewtype == "bar" {
-			bar := jsonbar(coldata)
+	/*
+		if *jsonconfig != "" {
+			fmt.Println("load", *jsonconfig)
+			coldata, err := jsonload(*jsonconfig)
+			if err != nil {
+				fmt.Println("json data transfer error")
+				return
+			}
+				fmt.Println(*viewtype)
+				if *viewtype == "bar" {
+					bar := jsonbar(coldata)
+					bar.Render(w)
+				} else if *viewtype == "scatter" {
+					fmt.Println("scatter")
+					page := jsonscatter(coldata)
+					page.Render(w)
+				}
+		} else if *data1 != "" || *data2 != "" {
+			coldata1, _ := jsonload(*data1)
+			coldata2, _ := jsonload(*data2)
+			fmt.Printf("zz")
+			//fmt.Printf("zz coldata1:%v coldata2:%v \n", coldata1, coldata2)
+			bar := jsonbar([]column_data{coldata1, coldata2})
 			bar.Render(w)
-		} else if *viewtype == "scatter" {
-			page := jsonscatter(coldata)
+		} else {
+			example(w)
+		}
+	*/
+	if *viewtype == "bar" {
+		if *data1 != "" || *data2 != "" {
+			coldata1, _ := jsonload(*data1)
+			coldata2, _ := jsonload(*data2)
+			bar := jsonbar([]column_data{coldata1, coldata2})
+			bar.Render(w)
+		}
+	} else if *viewtype == "scatter" {
+		if *data1 != "" || *data2 != "" {
+			//ScatterShowJsontemp()
+			coldata1, _ := scatterjsonload(*data1)
+			coldata2, _ := scatterjsonload(*data2)
+			page := jsonscatter([]scatter_data{coldata1, coldata2})
 			page.Render(w)
 		}
-
 	} else {
 		example(w)
 	}
@@ -208,4 +315,5 @@ func main() {
 	http.HandleFunc("/", httpserver)
 	fmt.Println("start http server 8081")
 	http.ListenAndServe("10.231.82.67:8081", nil)
+	//http.ListenAndServe("192.168.3.16:8081", nil)
 }
