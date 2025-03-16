@@ -1,0 +1,9 @@
+Create First Django project
+=============================
+
+1. manage
+django-admin startproject mysite
+
+2. run
+python manage.py runserver
+python manage.py startapp polls
