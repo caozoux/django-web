@@ -1,0 +1,132 @@
+{% load static %}
+<html lang="en" style="height: 100%">
+<head>
+  <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+
+<div id="container" style="height: 100%"></div>
+
+<div id="text2">
+	<table border=1>
+		   <thead>
+				<tr>
+					<th style = "width :60px">股票名</th>
+					<th style = "width :60px">形态</th>
+					<th style = "width :60px">涨幅</th>
+				</tr>
+			</thead>
+			<tbody id="text1">
+			</tbody>
+	</table>
+</div>
+<div id="table_list" style="height: 100%">
+	<table border=1>
+		<tr>
+			<th width=150>股票名</th>
+			<th>3天形态</th>
+			<th width=80>涨幅</th>
+		</tr>
+		<tr>
+			<th width=150>股票名</th>
+			<th>3天形态</th>
+			<th width=80>涨幅</th>
+		</tr>
+	</table>
+</div>
+
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'js/echarts.js' %}"></script>
+
+<script type="text/javascript">
+	function Pie1(data, ) {
+		var dom = document.getElementById('container');
+		var myChart = echarts.init(dom, null, {
+		  renderer: 'canvas',
+		  useDirtyRect: false
+		});
+		var app = {};
+
+		var option;
+    option = {
+		title: {
+		text: 'Referer of a Website',
+		subtext: 'Fake Data',
+		left: 'center'
+		},
+		tooltip: {
+		trigger: 'item'
+		},
+		legend: {
+		orient: 'vertical',
+		left: 'left'
+		},
+		series: [
+			{
+				name: 'Access From',
+				type: 'pie',
+				radius: '50%',
+				data:  data,
+			emphasis: {
+				itemStyle: {
+				  shadowBlur: 10,
+				  shadowOffsetX: 0,
+				  shadowColor: 'rgba(0, 0, 0, 0.5)'
+				}
+			  }
+			}
+	  	]
+	};
+		if (option && typeof option === 'object') {
+		  myChart.setOption(option);
+		}
+		window.addEventListener('resize', myChart.resize);
+	}
+	window.onload = function () {
+		$.ajax({
+			url: "/polls/tricker_pie/",
+			type:"POST",
+			data: {"k1": "v1"},
+			success: function (data) {
+				Pie1(data["obj"]);
+			}
+		})
+		$.ajax({  
+			type: "POST",  //提交方式
+			url: "/polls/get_wave_comanpy_list/",  //数据处理页面
+			data: {
+				wave_type: "333",
+			},
+			success: function (data) {  //成功时的回调函数
+				$("#text1").html("");//清除之前所生成的tr,不然再次查询会追加到原来的表格中
+
+				//cconsole.log(data["obj"])
+				$.each(data["obj"], function(index, value) {
+					console.log(value)
+					listdata=value
+					$("#text1").append(  //这里就是将前端tbody text1 加载内容
+						 "<tr><td style = 'width :60px'>"+listdata[0]+"</td>"
+						 +"<td style = 'width :60px'>"+listdata[1]+"</td>"
+						 +"<td style = 'width :60px' >"+listdata[2]+"</td></tr>"
+					);
+				});
+				/*
+				listdata=data["obj"][0]
+				//$(".t").remove();
+				$("#text1").append(  //这里就是将前端tbody text1 加载内容
+					 "<tr><td style = 'width :60px'>"+listdata[0]+"</td>"
+					 +"<td style = 'width :60px'>"+listdata[1]+"</td>"
+					 +"<td style = 'width :60px' >"+listdata[2]+"</td></tr>"
+				);
+				*/
+            },
+            error: function () {  
+                alert("查询失败")  
+            }  
+        })
+    }  
+
+</script>
+</body>
+</html>
