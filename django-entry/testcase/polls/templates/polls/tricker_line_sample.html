@@ -9,8 +9,8 @@
 <script src="{% static 'js/jquery.min.js' %}"></script>
 <script src="{% static 'js/echarts.min.js' %}"></script>
 
-  <script type="text/javascript">
-    function Pie1(data, ) {
+<script type="text/javascript">
+	function Pie1(data, ) {
 		var dom = document.getElementById('container');
 		var myChart = echarts.init(dom, null, {
 		  renderer: 'canvas',
@@ -40,17 +40,16 @@
 		}
     	window.addEventListener('resize', myChart.resize);
 	}
-
-    window.onload = function () {
-        $.ajax({
-            url: "/polls/tricker_line_sample/",
-            type:"POST",
-            data: {"k1": "v1"},
-            success: function (data) {
-                Pie1(data["obj"]);
-            }
-        })
-    }
-  </script>
+	window.onload = function () {
+		$.ajax({
+			url: "/polls/tricker_line_sample/",
+			type:"POST",
+			data: {"k1": "v1"},
+			success: function (data) {
+				Pie1(data["obj"]);
+			}
+		})
+	}
+</script>
 </body>
 </html>

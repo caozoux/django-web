@@ -20,6 +20,7 @@ urlpatterns = [
     path('candlestick-large/', views.candlestick_large, name='candlestick_large'),
     path('candlestickConnect/', views.candlestickConnect, name='candlestickConnect'),
     path('tricker_pie/', views.tricker_pie, name='tricker_pie'),
+    path('mutline_tricker_price/', views.mutline_tricker_price, name='mutline_tricker_price'),
     #股票形态的公司列表ajax接口
     path('get_wave_comanpy_list/', views.get_wave_comanpy_list, name='get_wave_comanpy_list'),
 ]

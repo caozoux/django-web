@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Question
 import json
+import trade_base
 
 def index(request):
     #return HttpResponse("Hello, world. You're at the polls index.")
@@ -153,7 +154,6 @@ def get_wave_comanpy_list(request):
     if request.method == "POST":
         with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/2025-03-19_wave_3.json",'r') as f:
             data = json.load(f)
-
         obj=[]
         report_data = data["tricker_list_dict"]["333"]
         company_day_price = data["tricker_price_dict"]
@@ -167,3 +167,12 @@ def get_wave_comanpy_list(request):
             item1.append("%0.2f"%val)
             obj.append(item1)
         return JsonResponse({"obj": obj})
+
+@csrf_exempt
+def mutline_tricker_price(request):
+    if request.method == "POST":
+        date_list=trade_base.company_list_trade_load_to_line([2,30,31,32])
+        return JsonResponse({"obj": date_list})
+    else:
+        return render(request, 'polls/mutline_tricker_price.html', )
+
