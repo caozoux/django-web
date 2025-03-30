@@ -171,7 +171,13 @@ def get_wave_comanpy_list(request):
 @csrf_exempt
 def mutline_tricker_price(request):
     if request.method == "POST":
-        date_list=trade_base.company_list_trade_load_to_line([2,30,31,32])
+        with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/2025-03-28_wave_3.json",'r') as f:
+            data = json.load(f)
+        tricker_id_list  = data["tricker_list_dict"]["333"]
+        #date_list=trade_base.company_list_trade_load_to_line([2,30,31,32])
+        #print(tricker_id_list)
+        date_list=trade_base.company_list_trade_load_to_line(tricker_id_list)
+        print(date_list)
         return JsonResponse({"obj": date_list})
     else:
         return render(request, 'polls/mutline_tricker_price.html', )

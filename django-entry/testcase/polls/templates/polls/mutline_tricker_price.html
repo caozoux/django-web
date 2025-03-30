@@ -4,7 +4,7 @@
   <meta charset="utf-8">
 </head>
 <body style="height: 100%; margin: 0">
-  <div id="container" style="height: 100%"></div>
+<div id="container" style="height: 100%"></div>
 
 <script src="{% static 'js/jquery.min.js' %}"></script>
 <script src="{% static 'js/echarts.js' %}"></script>
@@ -41,33 +41,19 @@
 		yAxis: {
 			type: 'value'
 		},
-		series: [
-			{
-			  name: data[0][0],
-			  type: 'line',
-			  stack: 'Total',
-			  data: data[2][0]
-			},
-			{
-			  name: data[0][1],
-			  type: 'line',
-			  stack: 'Total',
-			  data: data[2][1]
-			},
-			{
-			  name: data[0][2],
-			  type: 'line',
-			  stack: 'Total',
-			  data: data[2][2]
-			},
-			{
-			  name: data[0][3],
-			  type: 'line',
-			  stack: 'Total',
-			  data: data[2][3]
-			}
-		]
+		series: []
 		};
+
+		for (let i =0; i < data[0].length; i++)
+		{
+			option.series.push(
+			{
+			  name: data[0][i],
+			  type: 'line',
+			  data: data[2][i]
+			})
+		}
+
 		if (option && typeof option === 'object') {
 		  myChart.setOption(option);
 		}
@@ -79,7 +65,7 @@
 			type:"POST",
 			data: {"k1": "v1"},
 			success: function (data) {
-				console.log(data["obj"])
+				//console.log(data["obj"])
 				block_show(data["obj"]);
 			}
 		})
