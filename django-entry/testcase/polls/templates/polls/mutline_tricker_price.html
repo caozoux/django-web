@@ -4,59 +4,157 @@
   <meta charset="utf-8">
 </head>
 <body style="height: 100%; margin: 0">
+<div id="button">
+	<button type="button" id="unshow_button">全部隐藏</button>
+	<button type="button" id="show_button">全部显示</button>
+	<input type="text" id="min_val" placeholder="最小值">
+	<input type="text" id="max_val" placeholder="最大值">
+	<button type="button" id="set_minmax_button">设置</button>
+</div>
 <div id="container" style="height: 100%"></div>
 
 <script src="{% static 'js/jquery.min.js' %}"></script>
 <script src="{% static 'js/echarts.js' %}"></script>
 
 <script type="text/javascript">
+	var min_show_val = 0
+	var max_show_val = 0
+	echarts.env.touchEventsSupported = false;
+	echarts.env.wxa = false;
+
+	function lines_show(show) {
+		const chartDom = document.getElementById('container');
+		const myChart = echarts.getInstanceByDom(chartDom);
+		var option = myChart.getOption();
+		/*
+		for (let key in option.legend[0].selected ) {
+			option.legend[0].selected[key] = show
+		}
+		*/
+		for (let index in option.series) {
+			item = option.series[index]
+			line_name = item["name"]
+			//option.legend[0].selected[line_name] = show
+			if (min_show_val != 0) { 
+				if (item.data.slice(-1)[0] >= min_show_val) {
+					if (max_show_val != 0) {
+						if (item.data.slice(-1)[0] <= max_show_val) {
+							option.legend[0].selected[line_name] = show
+						} else {
+							option.legend[0].selected[line_name] = 0
+						}
+					} else {
+						option.legend[0].selected[line_name] = show
+					}
+				} else {
+					option.legend[0].selected[line_name] = 0
+				}
+			} else {
+				if (max_show_val != 0) {
+					if (item.data.slice(-1)[0] <= max_show_val) {
+						option.legend[0].selected[line_name] = show
+					} else {
+						option.legend[0].selected[line_name] = 0
+					}
+				} else {
+					option.legend[0].selected[line_name] = show
+				}
+			}
+		}
+		//option.legend.selected[0] = true;
+		myChart.setOption(option)
+	}
+	function button_unshow() {
+		lines_show(0)
+	}
+	function button_show() {
+		lines_show(1)
+	}
+	function func_set_minmax_button() {
+		var inputElement = document.getElementById("min_val");
+		if (inputElement.value) {
+			min_show_val = inputElement.value;
+		}
+		inputElement = document.getElementById("max_val");
+		if (inputElement.value) {
+			max_show_val = inputElement.value;
+		}
+	}
 	function block_show(data, ) {
 		var dom = document.getElementById('container');
 		var myChart = echarts.init(dom, null, {
 		  renderer: 'canvas',
 		  useDirtyRect: false
 		});
-		var app = {};
 		var option;
 		option = {
-		title: {
-			text: 'Stacked Line'
-		},
-		tooltip: {
-			trigger: 'axis'
-		},
-		legend: {
-			data: data[0]
-		},
-		toolbox: {
-			feature: {
-			  saveAsImage: {}
-			}
-		},
-		xAxis: {
-			type: 'category',
-			boundaryGap: false,
-			data: data[1]
-		},
-		yAxis: {
-			type: 'value'
-		},
-		series: []
+			tooltip: {
+				trigger: 'axis'
+			},
+			legend: {
+				data: data[0],
+				show: true,
+				selected: {
+				}
+			},
+			toolbox: {
+				feature: {
+				  saveAsImage: {}
+				}
+			},
+			xAxis: {
+				type: 'category',
+				boundaryGap: false,
+				data: data[1]
+			},
+			yAxis: {
+				type: 'value'
+			},
+			series: []
 		};
 
 		for (let i =0; i < data[0].length; i++)
 		{
 			option.series.push(
 			{
-			  name: data[0][i],
-			  type: 'line',
-			  data: data[2][i]
+				name: data[0][i],
+				type: 'line',
+				data: data[2][i],
+				symbol: 'none',
+				lineStyle: {
+					width: 1
+				}
 			})
+			option.legend.selected[data[0][i]]=false;
 		}
-
 		if (option && typeof option === 'object') {
-		  myChart.setOption(option);
+			myChart.setOption(option);
 		}
+		        // 监听图例选择变化事件
+		myChart.on('click', (params)=> {
+			var selected = params.selected;
+			var legendName = params.name;
+
+			console.log("zz")
+			// 获取所有系列
+			var series = option.series;
+
+			for (var i = 0; i < series.length; i++) {
+				var s = series[i];
+				if (s.name === legendName) {
+					// 如果当前图例被选中，则显示对应系列，否则隐藏
+					s.show = selected[legendName];
+				} else {
+					// 其他系列全部隐藏
+					s.show = false;
+				}
+			}
+
+			// 更新图表
+			myChart.setOption({
+				series: series
+			});
+		});
     	window.addEventListener('resize', myChart.resize);
 	}
 	window.onload = function () {
@@ -70,6 +168,15 @@
 			}
 		})
 	}
+	const unshow_button = document.getElementById("unshow_button");
+	const show_button = document.getElementById("show_button");
+	const set_minmax_button = document.getElementById("set_minmax_button");
+	unshow_button.addEventListener("click", button_unshow);
+	show_button.addEventListener("click", button_show);
+	show_button.addEventListener("click", button_show);
+	set_minmax_button.addEventListener("click", func_set_minmax_button);
+	//const chartDom = document.getElementById('container');
+	//const chartInstance = getInstanceByDom(chartDom);
 	//block_show("");
 </script>
 </body>

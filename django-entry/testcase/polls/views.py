@@ -28,7 +28,7 @@ def index(request):
 def test(request):
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
     context = {'latest_question_list': latest_question_list}
-    return render(request, 'polls/test1.html', context)
+    return render(request, 'polls/test.html', context)
     #return HttpResponse("You're looking at question %s." % 0)
 
 # Leave the rest of the views (detail, results, vote) unchanged

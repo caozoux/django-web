@@ -1,0 +1,118 @@
+{% load static %}
+<html lang="en" style="height: 100%">
+<head>
+  <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+  <div id="container" style="height: 100%"></div>
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'js/echarts.js' %}"></script>
+
+  <script type="text/javascript">
+        // 初始化 ECharts 实例
+        var myChart = echarts.init(document.getElementById('container'));
+
+        // 指定图表的配置项和数据
+        var option = {
+            title: {
+                text: '多条折线切换显示示例'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data: ['折线1', '折线2', '折线3']
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    name: '折线1',
+                    type: 'line',
+                    data: [120, 132, 101, 134, 90, 230, 210],
+                    itemStyle: {
+                        color: '#5470C6'
+                    },
+                    lineStyle: {
+                        width: 3
+                    },
+                    // 默认显示第一条折线
+                    show: true
+                },
+                {
+                    name: '折线2',
+                    type: 'line',
+                    data: [220, 182, 191, 234, 290, 330, 310],
+                    itemStyle: {
+                        color: '#91CC75'
+                    },
+                    lineStyle: {
+                        width: 3
+                    },
+                    // 默认隐藏第二条折线
+                    show: false
+                },
+                {
+                    name: '折线3',
+                    type: 'line',
+                    data: [150, 232, 201, 154, 190, 330, 410],
+                    itemStyle: {
+                        color: '#EE6666'
+                    },
+                    lineStyle: {
+                        width: 3
+                    },
+                    // 默认隐藏第三条折线
+                    show: false
+                }
+            ]
+        };
+
+        // 使用刚指定的配置项和数据显示图表
+        myChart.setOption(option);
+
+        // 监听图例选择变化事件
+        myChart.on('legendselectchanged', function (params) {
+            var selected = params.selected;
+            var legendName = params.name;
+
+            // 获取所有系列
+            var series = option.series;
+
+			console.log("zz")
+            for (var i = 0; i < series.length; i++) {
+                var s = series[i];
+                if (s.name === legendName) {
+                    // 如果当前图例被选中，则显示对应系列，否则隐藏
+                    s.show = selected[legendName];
+                } else {
+                    // 其他系列全部隐藏
+                    s.show = false;
+                }
+            }
+
+            // 更新图表
+            myChart.setOption({
+                series: series
+            });
+        });
+
+        // 可选：初始隐藏所有折线，仅显示图例
+        // 如果希望初始时不显示任何折线，可以将所有系列的 show 设置为 false
+        // 然后在图例选择事件中根据选中状态显示对应系列
+        /*
+        option.series.forEach(function(s) {
+            s.show = false;
+        });
+        myChart.setOption(option);
+        */
+  </script>
+</body>
+</html>
