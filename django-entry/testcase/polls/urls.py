@@ -23,4 +23,6 @@ urlpatterns = [
     path('mutline_tricker_price/', views.mutline_tricker_price, name='mutline_tricker_price'),
     #股票形态的公司列表ajax接口
     path('get_wave_comanpy_list/', views.get_wave_comanpy_list, name='get_wave_comanpy_list'),
+    #公司涨跌个数
+    path('line_shows/', views.line_shows, name='line_shows'),
 ]

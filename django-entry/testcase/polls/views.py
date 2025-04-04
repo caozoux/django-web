@@ -182,3 +182,35 @@ def mutline_tricker_price(request):
     else:
         return render(request, 'polls/mutline_tricker_price.html', )
 
+@csrf_exempt
+def line_shows(request):
+    if request.method == "POST":
+        report_data=[]
+        number_list=[]
+        number_list_0=[]
+        number_list_1=[]
+        number_list_2=[]
+        with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/day_du.json",'r') as f:
+            data = json.load(f)
+        #report_data.append(["平", "跌", "涨"])
+        report_data.append(["涨"])
+        for item in data.values():
+            print(item)
+            if item[0] == 0 and len(number_list_0) != 0:
+                number_list_0.append(number_list_0[-1])
+                number_list_1.append(number_list_1[-1])
+                number_list_2.append(number_list_2[-1])
+            else:
+                number_list_0.append(item[0])
+                number_list_1.append(item[1])
+                number_list_2.append(item[2])
+        report_data.append(list(data.keys()))
+        #number_list.append(number_list_0)
+        #number_list.append(number_list_1)
+        number_list.append(number_list_2)
+        report_data.append(number_list)
+        print(report_data)
+        return JsonResponse({"obj": report_data})
+    else:
+        return render(request, 'polls/line_shows.html', )
+
