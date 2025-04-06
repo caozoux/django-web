@@ -34,6 +34,12 @@
 		for (let index in option.series) {
 			item = option.series[index]
 			line_name = item["name"]
+			if (is_filter_var(item.data.slice(-1)[0])) {
+				option.legend[0].selected[line_name] = show
+			} else {
+				option.legend[0].selected[line_name] = 0
+			}
+			/*
 			//option.legend[0].selected[line_name] = show
 			if (min_show_val != 0) { 
 				if (item.data.slice(-1)[0] >= min_show_val) {
@@ -60,10 +66,41 @@
 					option.legend[0].selected[line_name] = show
 				}
 			}
+			*/
 		}
 		//option.legend.selected[0] = true;
 		myChart.setOption(option)
 	}
+
+	function is_filter_var(price) {
+		if (min_show_val != 0) { 
+			if (price  >= min_show_val) {
+				if (max_show_val != 0) {
+					if (price  <= max_show_val) {
+						return true;
+					} else {
+						return false
+					}
+				} else {
+					return true;
+				}
+			} else {
+				return false
+			}
+		} else {
+			if (max_show_val != 0) {
+				if (item.data.slice(-1)[0] <= max_show_val) {
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				return true;
+			}
+		}
+		return true;
+	}
+	
 	function button_unshow() {
 		lines_show(0)
 	}
@@ -121,6 +158,7 @@
 				type: 'line',
 				data: data[2][i],
 				symbol: 'none',
+				triggerLineEvent: true,
 				lineStyle: {
 					width: 1
 				}
@@ -132,28 +170,31 @@
 		}
 		        // 监听图例选择变化事件
 		myChart.on('click', (params)=> {
+			const chartDom = document.getElementById('container');
+			const myChart = echarts.getInstanceByDom(chartDom);
+			var option = myChart.getOption();
 			var selected = params.selected;
-			var legendName = params.name;
 
-			console.log("zz")
+			console.log(option)
 			// 获取所有系列
 			var series = option.series;
+			var select_index = params.seriesIndex
 
 			for (var i = 0; i < series.length; i++) {
-				var s = series[i];
-				if (s.name === legendName) {
-					// 如果当前图例被选中，则显示对应系列，否则隐藏
-					s.show = selected[legendName];
+				item = option.series[i]
+				if (i != select_index) {
+					if (is_filter_var(item.data.slice(-1)[0])) {
+						option.legend[0].selected[data[0][i]]= !option.legend[0].selected[data[0][i]]
+					} else {
+						option.legend[0].selected[i] = 0
+					}
 				} else {
-					// 其他系列全部隐藏
-					s.show = false;
+					option.legend[0].selected[data[0][i]]=true;
 				}
 			}
 
 			// 更新图表
-			myChart.setOption({
-				series: series
-			});
+			myChart.setOption(option);
 		});
     	window.addEventListener('resize', myChart.resize);
 	}

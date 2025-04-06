@@ -44,7 +44,7 @@
                         width: 3
                     },
                     // 默认显示第一条折线
-                    show: true
+					triggerLineEvent: true
                 },
                 {
                     name: '折线2',
@@ -57,7 +57,7 @@
                         width: 3
                     },
                     // 默认隐藏第二条折线
-                    show: false
+					triggerLineEvent: true
                 },
                 {
                     name: '折线3',
@@ -70,7 +70,7 @@
                         width: 3
                     },
                     // 默认隐藏第三条折线
-                    show: false
+					triggerLineEvent: true
                 }
             ]
         };
@@ -79,14 +79,12 @@
         myChart.setOption(option);
 
         // 监听图例选择变化事件
-        myChart.on('legendselectchanged', function (params) {
+        myChart.on('click', function (params) {
             var selected = params.selected;
             var legendName = params.name;
-
             // 获取所有系列
             var series = option.series;
 
-			console.log("zz")
             for (var i = 0; i < series.length; i++) {
                 var s = series[i];
                 if (s.name === legendName) {
