@@ -6,6 +6,8 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Question
 import json
 import trade_base
+from datetime import date, timedelta
+from datetime import datetime, timedelta
 
 def index(request):
     #return HttpResponse("Hello, world. You're at the polls index.")
@@ -171,7 +173,9 @@ def get_wave_comanpy_list(request):
 @csrf_exempt
 def mutline_tricker_price(request):
     if request.method == "POST":
-        with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/2025-03-28_wave_3.json",'r') as f:
+        timestr=str(datetime.now().date())
+        #with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/2025-04-17_wave_3.json",'r') as f:
+        with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json",'r') as f:
             data = json.load(f)
         tricker_id_list  = data["tricker_list_dict"]["333"]
         #date_list=trade_base.company_list_trade_load_to_line([2,30,31,32])
