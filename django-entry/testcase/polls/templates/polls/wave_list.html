@@ -10,7 +10,8 @@
 	<input type="text" id="min_val" placeholder="最小值">
 	<input type="text" id="max_val" placeholder="最大值">
 	<button type="button" id="set_minmax_button">设置</button>
-	<input type="date" id="timestr"></input>
+	<input type="date" id="myDate" value="2025-04-30"></input>
+	<button type="button" id="flush_button">更新</button>
 </div>
 <div id="container" style="height: 100%"></div>
 
@@ -22,6 +23,7 @@
 	var max_show_val = 0
 	echarts.env.touchEventsSupported = false;
 	echarts.env.wxa = false;
+	var wave_type = {{ wave_type }}
 
 	function lines_show(show) {
 		const chartDom = document.getElementById('container');
@@ -108,6 +110,17 @@
 	function button_show() {
 		lines_show(1)
 	}
+	function func_button_flush() {
+		$.ajax({
+			url: url_link,
+			type:"POST",
+			data: {"wave": wave_type, "timestr":(document.getElementById('myDate').value)},
+			success: function (data) {
+				//console.log(data["obj"])
+				block_show(data["obj"]);
+			}
+		})
+	}
 	function func_set_minmax_button() {
 		var inputElement = document.getElementById("min_val");
 		if (inputElement.value) {
@@ -150,7 +163,6 @@
 			},
 			series: []
 		};
-
 		for (let i =0; i < data[0].length; i++)
 		{
 			option.series.push(
@@ -200,10 +212,14 @@
     	window.addEventListener('resize', myChart.resize);
 	}
 	window.onload = function () {
+		document.getElementById('myDate').value = '2025-04-30';
+		timestr = document.getElementById('myDate').value;
+		url_link = "/polls/wave_list/"+timestr;
+		
 		$.ajax({
-			url: "/polls/mutline_tricker_price/",
+			url: url_link,
 			type:"POST",
-			data: {"k1": "v1"},
+			data: {"wave": "333"},
 			success: function (data) {
 				//console.log(data["obj"])
 				block_show(data["obj"]);
@@ -217,6 +233,7 @@
 	show_button.addEventListener("click", button_show);
 	show_button.addEventListener("click", button_show);
 	set_minmax_button.addEventListener("click", func_set_minmax_button);
+	flush_button.addEventListener("click", func_button_flush);
 	//const chartDom = document.getElementById('container');
 	//const chartInstance = getInstanceByDom(chartDom);
 	//block_show("");

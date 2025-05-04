@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Question
 import json
 import trade_base
+import os
 from datetime import date, timedelta
 from datetime import datetime, timedelta
 
@@ -131,7 +132,7 @@ def candlestickConnect(request):
         return render(request, 'polls/candlestickConnect.html', )
 
 @csrf_exempt
-def tricker_pie(request):
+def tricker_pie_noargs(request):
     if request.method == "POST":
         with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/2025-03-19_wave_3.json",'r') as f:
             data = json.load(f)
@@ -150,6 +151,31 @@ def tricker_pie(request):
     else:
         return render(request, 'polls/tricker_pie.html', )
 
+@csrf_exempt
+def tricker_pie(request, tricker_id):
+
+    report_data=[]
+    tricker_data = trade_base.company_trade_load(tricker_id)
+    for key in tricker_data.keys():
+        item=[key, tricker_data[key]["open"], tricker_data[key]["close"], "%0.2f"%(tricker_data[key]["close"] - tricker_data[key]["open"]), "%0.4f"%((tricker_data[key]["close"] - tricker_data[key]["open"])/tricker_data[key]["open"]), tricker_data[key]["low"], tricker_data[key]["high"], tricker_data[key]["volume"] * tricker_data[key]["close"] , tricker_data[key]["volume"],"-"]
+        report_data.append(item)
+    data={'items':report_data}
+    context = {'report_data': json.dumps(data)}
+    print(report_data)
+    return render(request, 'polls/tricker_pie.html', context)
+
+def _get_wave_data(timestr, wave_type):
+    filename="/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json"
+    if not os.path.exists(filename):
+        return []
+
+    with open(filename,'r') as f:
+        data = json.load(f)
+    tricker_id_list  = data["tricker_list_dict"][wave_type]
+
+    date_list=trade_base.company_list_trade_load_to_line(tricker_id_list)
+    #print(date_list)
+    return date_list
 
 @csrf_exempt
 def get_wave_comanpy_list(request):
@@ -173,7 +199,7 @@ def get_wave_comanpy_list(request):
 @csrf_exempt
 def mutline_tricker_price(request):
     if request.method == "POST":
-        timestr=str(datetime.now().date())
+        timestr=trade_base.get_last_workdate()
         #with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/2025-04-17_wave_3.json",'r') as f:
         with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json",'r') as f:
             data = json.load(f)
@@ -217,4 +243,24 @@ def line_shows(request):
         return JsonResponse({"obj": report_data})
     else:
         return render(request, 'polls/line_shows.html', )
+
+@csrf_exempt
+def wave_list(request, wave_type):
+    if request.method == "POST":
+        wave_type = request.POST.get("wave")
+        timestr = request.POST.get("timestr")
+        print(wave_type, timestr)
+        date_list=_get_wave_data(timestr, wave_type)
+        return JsonResponse({"obj": date_list})
+    else:
+        context = {'wave_type': wave_type}
+        return render(request, 'polls/wave_list.html', context)
+
+@csrf_exempt
+def wave_list_noargs(request):
+    if request.method == "POST":
+        date_list=[]
+        return JsonResponse({"obj": date_list})
+    else:
+        return render(request, 'polls/wave_list.html', )
 
