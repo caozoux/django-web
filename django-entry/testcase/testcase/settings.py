@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-8x0#t!8@6y53yrzr13wqp2!8krzdlpweb##315u(8(ab4fizi-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Django默认的静态文件url
 STATIC_URL = 'static/'

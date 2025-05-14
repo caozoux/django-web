@@ -212,7 +212,18 @@
     	window.addEventListener('resize', myChart.resize);
 	}
 	window.onload = function () {
+		var date = new Date();
+		date.setDate(date.getDate() - 1);
+		var year = date.getFullYear().toString();
+		var month = (date.getMonth() + 1).toString();
+		var day = date.getDate().toString();
+		// 对月份和日期进行补零
+		month = month.length === 1 ? '0' + month : month;
+		day = day.length === 1 ? '0' + day : day;
+		var currentDate = year +"-" + month + "-" + day;
+
 		document.getElementById('myDate').value = '2025-04-30';
+		document.getElementById('myDate').value = currentDate;
 		timestr = document.getElementById('myDate').value;
 		url_link = "/polls/wave_list/"+timestr;
 		

@@ -174,7 +174,6 @@ def _get_wave_data(timestr, wave_type):
     tricker_id_list  = data["tricker_list_dict"][wave_type]
 
     date_list=trade_base.company_list_trade_load_to_line(tricker_id_list)
-    #print(date_list)
     return date_list
 
 @csrf_exempt
