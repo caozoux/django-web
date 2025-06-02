@@ -10,6 +10,54 @@ import os
 from datetime import date, timedelta
 from datetime import datetime, timedelta
 
+index_list= [
+["每日股票涨跌个数", "line_shows/"],
+["每日股票形态", "wave_list/333"],
+["股票K线图", "tricker_pie/000002"]
+]
+
+wavedata_list= [
+"333",
+"133",
+"233",
+"222",
+"221",
+"331",
+"332",
+"223",
+"111",
+"112",
+"113",
+"121",
+"122",
+"123",
+"131",
+"132",
+"211",
+"212",
+"213",
+"231",
+"232",
+"311",
+"312",
+"313",
+"321",
+"322",
+"323"
+]
+
+def _get_wave_data(timestr, wave_type):
+    filename="/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json"
+    if not os.path.exists(filename):
+        return []
+
+    with open(filename,'r') as f:
+        data = json.load(f)
+    tricker_id_list  = data["tricker_list_dict"][wave_type]
+
+    date_list=trade_base.company_list_trade_load_to_line(tricker_id_list)
+    return date_list
+
 def index(request):
     #return HttpResponse("Hello, world. You're at the polls index.")
 
@@ -25,12 +73,26 @@ def index(request):
     #return HttpResponse(template.render(context, request))
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
     context = {'latest_question_list': latest_question_list}
+    context = {'index_list': index_list}
     return render(request, 'polls/index.html', context)
 
 
 def test(request):
+    wavelist=[]
+    timestr = "2025-05-30"
+    filename="/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json"
+    with open(filename,'r') as f:
+        data = json.load(f)
+    for item in data["tricker_list_dict"].keys():
+        wavelist.append([item, len(data["tricker_list_dict"][item]), data["tricker_list_dict"][item]])
+
+    tricker_id_list  = data["tricker_list_dict"]["333"]
+
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
     context = {'latest_question_list': latest_question_list}
+    context = {'tricker_id_list': tricker_id_list, 'wavelist': wavelist}
+    #context = {}
+    print(tricker_id_list)
     return render(request, 'polls/test.html', context)
     #return HttpResponse("You're looking at question %s." % 0)
 
@@ -134,47 +196,31 @@ def candlestickConnect(request):
 @csrf_exempt
 def tricker_pie_noargs(request):
     if request.method == "POST":
+        tricker_id = request.POST.get("tricker_id")
+        report_data=[]
+        tricker_data = trade_base.company_trade_load(tricker_id)
+        for key in tricker_data.keys():
+            item=[key, tricker_data[key]["open"], tricker_data[key]["close"], "%0.2f"%(tricker_data[key]["close"] - tricker_data[key]["open"]), "%0.4f"%((tricker_data[key]["close"] - tricker_data[key]["open"])/tricker_data[key]["open"]), tricker_data[key]["low"], tricker_data[key]["high"], tricker_data[key]["volume"] * tricker_data[key]["close"] , tricker_data[key]["volume"],"-"]
+            report_data.append(item)
         with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/2025-03-19_wave_3.json",'r') as f:
             data = json.load(f)
-
-        report_data = data["report_total"]
-        obj=[]
-        for key in report_data.keys():
-            dict_item={}
-            dict_item["value"] = report_data[key]
-            dict_item["name"] = key
-            obj.append(dict_item)
-
-        #obj = [['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'bb'], [150, 230, 224, 218, 135, 147, 260, 270]]
-        #obj = [["2004-01-02",10452.74,10409.85,10367.41,10554.96,168890000],["2004-01-05",10411.85,10544.07,10411.85,10575.92,221290000],["2004-01-06",10543.85,10538.66,10454.37,10584.07,191460000],["2004-01-07",10535.46,10529.03,10432,10587.55,225490000]]
-        return JsonResponse({"obj": obj})
+        print(report_data)
+        return JsonResponse({"obj": report_data})
     else:
         return render(request, 'polls/tricker_pie.html', )
 
 @csrf_exempt
 def tricker_pie(request, tricker_id):
-
     report_data=[]
     tricker_data = trade_base.company_trade_load(tricker_id)
     for key in tricker_data.keys():
         item=[key, tricker_data[key]["open"], tricker_data[key]["close"], "%0.2f"%(tricker_data[key]["close"] - tricker_data[key]["open"]), "%0.4f"%((tricker_data[key]["close"] - tricker_data[key]["open"])/tricker_data[key]["open"]), tricker_data[key]["low"], tricker_data[key]["high"], tricker_data[key]["volume"] * tricker_data[key]["close"] , tricker_data[key]["volume"],"-"]
         report_data.append(item)
+
     data={'items':report_data}
     context = {'report_data': json.dumps(data)}
     print(report_data)
     return render(request, 'polls/tricker_pie.html', context)
-
-def _get_wave_data(timestr, wave_type):
-    filename="/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json"
-    if not os.path.exists(filename):
-        return []
-
-    with open(filename,'r') as f:
-        data = json.load(f)
-    tricker_id_list  = data["tricker_list_dict"][wave_type]
-
-    date_list=trade_base.company_list_trade_load_to_line(tricker_id_list)
-    return date_list
 
 @csrf_exempt
 def get_wave_comanpy_list(request):
@@ -248,7 +294,6 @@ def wave_list(request, wave_type):
     if request.method == "POST":
         wave_type = request.POST.get("wave")
         timestr = request.POST.get("timestr")
-        print(wave_type, timestr)
         date_list=_get_wave_data(timestr, wave_type)
         return JsonResponse({"obj": date_list})
     else:
@@ -258,8 +303,8 @@ def wave_list(request, wave_type):
 @csrf_exempt
 def wave_list_noargs(request):
     if request.method == "POST":
-        date_list=[]
-        return JsonResponse({"obj": date_list})
+        report_data=[]
+        return JsonResponse({"obj": report_data})
     else:
         return render(request, 'polls/wave_list.html', )
 

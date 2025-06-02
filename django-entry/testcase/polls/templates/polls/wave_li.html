@@ -50,19 +50,12 @@
 
 <body>
 	<div class="container">
-		<div class="div1" >
-			{% for wave in wavelist%}
-				<ul id="multiLevelList">
-					<li class="parent collapsed">
-						<span>{{ wave.0 }} 个数:{{ wave.1 }}</span>
-						<ul class="selection-list" id="myList" >
-							{% for tricker_id in wave.2  %}
-								<li >{{ tricker_id }}</li>
-							{% endfor %}
-						</ul>
-					</li>
-				</ul>
+		<div class="div1" >Flexbox - 第一个DIV>
+			<ul class="selection-list" id="myList" >
+			{% for item in tricker_id_list %}
+				<li >{{ item}}</li>
 			{% endfor %}
+			</ul>
 		</div>
 		<div class="div2">Flexbox - 第二个DIV>
 			<div id="container" style="height: 1000"></div>
@@ -71,7 +64,6 @@
 <script src="{% static 'js/jquery.min.js' %}"></script>
 <script src="{% static 'js/echarts.js' %}"></script>
 <script type="text/javascript">
-
 
 	var chartDom = document.getElementById('container');
 	var myChart = echarts.init(chartDom);

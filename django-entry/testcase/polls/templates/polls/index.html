@@ -7,3 +7,8 @@
 {% else %}
     <p>No polls are available.</p>
 {% endif %}
+
+{% for item in index_list %}
+		<li><a href="/polls/{{ item.1 }}">{{ item.0 }}</a></li>
+{% endfor %}
+
