@@ -45,6 +45,12 @@
 			color: white;
 			border-color: #006fe6;
 		}
+		.multiLevelList li ul {
+			display: none;
+		}
+		.multiLevelList li.active > ul {
+			display: block;
+		}
 	</style>
 </head>
 
@@ -52,9 +58,8 @@
 	<div class="container">
 		<div class="div1" >
 			{% for wave in wavelist%}
-				<ul id="multiLevelList">
-					<li class="parent collapsed">
-						<span>{{ wave.0 }} 个数:{{ wave.1 }}</span>
+				<ul class="multiLevelList">
+					<li>{{ wave.0 }} 个数:{{ wave.1 }}
 						<ul class="selection-list" id="myList" >
 							{% for tricker_id in wave.2  %}
 								<li >{{ tricker_id }}</li>
@@ -226,7 +231,9 @@
 		item.addEventListener('click', function() {
 			// 移除所有active类
 			listItems.forEach(li => li.classList.remove('active'));
+			listItems.forEach(li => li.style.backgroundColor = '');
 			// 为当前点击项添加active类
+			this.style.backgroundColor = 'blue';
 			this.classList.add('active');
 			// 获取选中的值
 			//const selectedValue = this.getAttribute('data-value');
@@ -271,6 +278,14 @@
 
 	option && myChart.setOption(option);
 
+	// 监听所有 LI 的点击事件
+	document.querySelectorAll('.multiLevelList li').forEach(li => {
+		li.addEventListener('click', function(event) {
+			if (event.target === this) {
+				this.classList.toggle('active');
+			}
+		});
+	});
 </script>
 </body>
 </html>

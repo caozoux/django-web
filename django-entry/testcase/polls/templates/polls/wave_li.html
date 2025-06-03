@@ -45,17 +45,29 @@
 			color: white;
 			border-color: #006fe6;
 		}
+		.multiLevelList li ul {
+			display: none;
+		}
+		.multiLevelList li.active > ul {
+			display: block;
+		}
 	</style>
 </head>
 
 <body>
 	<div class="container">
-		<div class="div1" >Flexbox - 第一个DIV>
-			<ul class="selection-list" id="myList" >
-			{% for item in tricker_id_list %}
-				<li >{{ item}}</li>
+		<div class="div1" >
+			{% for wave in wavelist%}
+				<ul class="multiLevelList">
+					<li>{{ wave.0 }} 个数:{{ wave.1 }}
+						<ul class="selection-list" id="myList" >
+							{% for tricker_id in wave.2  %}
+								<li >{{ tricker_id }}</li>
+							{% endfor %}
+						</ul>
+					</li>
+				</ul>
 			{% endfor %}
-			</ul>
 		</div>
 		<div class="div2">Flexbox - 第二个DIV>
 			<div id="container" style="height: 1000"></div>
@@ -64,6 +76,7 @@
 <script src="{% static 'js/jquery.min.js' %}"></script>
 <script src="{% static 'js/echarts.js' %}"></script>
 <script type="text/javascript">
+
 
 	var chartDom = document.getElementById('container');
 	var myChart = echarts.init(chartDom);
@@ -218,7 +231,9 @@
 		item.addEventListener('click', function() {
 			// 移除所有active类
 			listItems.forEach(li => li.classList.remove('active'));
+			listItems.forEach(li => li.style.backgroundColor = '');
 			// 为当前点击项添加active类
+			this.style.backgroundColor = 'blue';
 			this.classList.add('active');
 			// 获取选中的值
 			//const selectedValue = this.getAttribute('data-value');
@@ -263,6 +278,14 @@
 
 	option && myChart.setOption(option);
 
+	// 监听所有 LI 的点击事件
+	document.querySelectorAll('.multiLevelList li').forEach(li => {
+		li.addEventListener('click', function(event) {
+			if (event.target === this) {
+				this.classList.toggle('active');
+			}
+		});
+	});
 </script>
 </body>
 </html>
