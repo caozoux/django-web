@@ -1,0 +1,136 @@
+{% load static %}
+<html lang="en" style="height: 100%">
+<head>
+  <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container_min" style="height: 100%"></div>
+<div id="container_max" style="height: 100%"></div>
+<div id="container_min_max" style="height: 100%"></div>
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'js/echarts.min.js' %}"></script>
+
+<script type="text/javascript">
+	var list_min_index = {{ line_min_index|safe }}
+	var list_min_values = {{ line_min_values|safe }}
+	var list_max_index = {{ line_max_index|safe }}
+	var list_max_values = {{ line_max_values|safe }}
+
+	function block_min_max_show(index,min_values, max_values, ) {
+		var dom = document.getElementById('container_min_max');
+		var myChart = echarts.init(dom, null, {
+		  renderer: 'canvas',
+		  useDirtyRect: false
+		});
+		var app = {};
+		var option;
+
+		option = {
+			title: {
+    			text: 'min and max price'
+			},
+			tooltip: {
+				trigger: 'axis'
+			},
+			legend: {
+				data: ["min", "max"],
+			},
+			toolbox: {
+				feature: {
+				  saveAsImage: {}
+				}
+			},
+			xAxis: {
+				type: 'category',
+				boundaryGap: false,
+				data: index
+			},
+			yAxis: {
+				type: 'value'
+			},
+			series: [
+				{
+					name: "min",
+					type: 'line',
+					data: min_values
+				},
+				{
+					name: "max",
+					type: 'line',
+					data: max_values
+				}
+			]
+		};
+		myChart.setOption(option);
+	}
+	function block_max_show(index,values, ) {
+		var dom = document.getElementById('container_max');
+		var myChart = echarts.init(dom, null, {
+		  renderer: 'canvas',
+		  useDirtyRect: false
+		});
+		var app = {};
+		var option;
+
+		option = {
+			title: {
+    			text: 'max price'
+			},
+			xAxis: {
+				type: 'category',
+				data: index,
+			},
+			tooltip: {
+				trigger: 'axis'
+			},
+			yAxis: {
+				type: 'value'
+			},
+			series: [
+				{
+					data: values,
+					type: 'line'
+				}
+			]
+		};
+		myChart.setOption(option);
+	}
+	function block_min_show(index,values, ) {
+		var dom = document.getElementById('container_min');
+		var myChart = echarts.init(dom, null, {
+		  renderer: 'canvas',
+		  useDirtyRect: false
+		});
+		var app = {};
+		var option;
+
+		option = {
+			title: {
+    			text: 'min price'
+			},
+			xAxis: {
+				type: 'category',
+				data: index,
+			},
+			tooltip: {
+				trigger: 'axis'
+			},
+			yAxis: {
+				type: 'value'
+			},
+			series: [
+				{
+					data: values,
+					type: 'line'
+				}
+			]
+		};
+		myChart.setOption(option);
+	}
+	block_min_show(list_min_index, list_min_values)
+	block_max_show(list_max_index, list_max_values)
+	block_min_max_show(list_min_index, list_min_values, list_max_values)
+</script>
+</body>
+<

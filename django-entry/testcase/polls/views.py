@@ -60,18 +60,6 @@ def _get_wave_data(timestr, wave_type):
     return date_list
 
 def index(request):
-    #return HttpResponse("Hello, world. You're at the polls index.")
-
-    #latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    #output = ', '.join([q.question_text for q in latest_question_list])
-    #return HttpResponse(output)
-
-    #latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    #template = loader.get_template('polls/index.html')
-    #context = {
-    #    'latest_question_list': latest_question_list,
-    #}
-    #return HttpResponse(template.render(context, request))
     latest_question_list = Question.objects.order_by('-pub_date')[:5]
     context = {'latest_question_list': latest_question_list}
     context = {'index_list': index_list}
@@ -79,24 +67,35 @@ def index(request):
 
 
 def test(request):
-    wavelist=[]
-    timestr = "2025-05-30"
-    timestr=trade_base.get_last_workdate()
-    filename="/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json"
-    with open(filename,'r') as f:
+    categories = ['衬衫', '羊毛衫', '雪纺衫', '裤子', '高跟鞋', '袜子']
+    sales_data = [120, 200, 150, 80, 70, 110]
+    file=os.path.join(trade_base.home_path(), "configuration/trade/report/price_min.json")
+    with open(file, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    for item in data["tricker_list_dict"].keys():
-        wavelist.append([item, len(data["tricker_list_dict"][item]), data["tricker_list_dict"][item]])
 
-    tricker_id_list  = data["tricker_list_dict"]["333"]
+    #context = {'line_index': json.dumps(list(data.keys()), ensure_ascii=False), 'line_values': json.dumps(list(data.values()), ensure_ascii=False)}
+    context = {'line_index': json.dumps(categories, ensure_ascii=False), 'line_values': json.dumps(sales_data, ensure_ascii=False)}
 
-    latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    context = {'latest_question_list': latest_question_list}
-    context = {'tricker_id_list': tricker_id_list, 'wavelist': wavelist}
-    #context = {}
-    print(tricker_id_list)
+    print(list(data.keys()))
+    print(list(data.values()))
     return render(request, 'polls/test.html', context)
-    #return HttpResponse("You're looking at question %s." % 0)
+
+def price_min_report(request):
+    file=os.path.join(trade_base.home_path(), "configuration/trade/report/price_min.json")
+    with open(file, 'r', encoding='utf-8') as f:
+        min_data = json.load(f)
+    file=os.path.join(trade_base.home_path(), "configuration/trade/report/price_max.json")
+    with open(file, 'r', encoding='utf-8') as f:
+        max_data = json.load(f)
+
+    context = {
+            'line_min_index': json.dumps(list(min_data.keys()), ensure_ascii=False),
+            'line_min_values': json.dumps(list(min_data.values()), ensure_ascii=False),
+            'line_max_index': json.dumps(list(max_data.keys()), ensure_ascii=False),
+            'line_max_values': json.dumps(list(max_data.values()), ensure_ascii=False),
+            }
+
+    return render(request, 'polls/price_min_report.html', context)
 
 def wave_list_all(request):
     wavelist=[]
