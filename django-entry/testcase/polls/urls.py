@@ -28,4 +28,5 @@ urlpatterns = [
     path('line_shows/', views.line_shows, name='line_shows'),
     path('wave_list', views.wave_list_noargs, name='wave_list_noargs'),
     path('wave_list/<str:wave_type>', views.wave_list, name='wave_list'),
+    path('wave_list_all/', views.test, name='wave_list_all'),
 ]

@@ -13,7 +13,8 @@ from datetime import datetime, timedelta
 index_list= [
 ["每日股票涨跌个数", "line_shows/"],
 ["每日股票形态", "wave_list/333"],
-["股票K线图", "tricker_pie/000002"]
+["股票K线图", "tricker_pie/000002"],
+["股票形态统计", "wave_list_all/"]
 ]
 
 wavedata_list= [
@@ -80,6 +81,7 @@ def index(request):
 def test(request):
     wavelist=[]
     timestr = "2025-05-30"
+    timestr=trade_base.get_last_workdate()
     filename="/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json"
     with open(filename,'r') as f:
         data = json.load(f)
@@ -95,6 +97,24 @@ def test(request):
     print(tricker_id_list)
     return render(request, 'polls/test.html', context)
     #return HttpResponse("You're looking at question %s." % 0)
+
+def wave_list_all(request):
+    wavelist=[]
+    timestr=trade_base.get_last_workdate()
+    filename="/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json"
+    with open(filename,'r') as f:
+        data = json.load(f)
+    for item in data["tricker_list_dict"].keys():
+        wavelist.append([item, len(data["tricker_list_dict"][item]), data["tricker_list_dict"][item]])
+
+    tricker_id_list  = data["tricker_list_dict"]["333"]
+
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {'latest_question_list': latest_question_list}
+    context = {'tricker_id_list': tricker_id_list, 'wavelist': wavelist}
+    #context = {}
+    print(tricker_id_list)
+    return render(request, 'polls/wave_list_all.html', context)
 
 # Leave the rest of the views (detail, results, vote) unchanged
 # Create your views here.
