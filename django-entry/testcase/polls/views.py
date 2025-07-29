@@ -14,7 +14,8 @@ index_list= [
 ["每日股票涨跌个数", "line_shows/"],
 ["每日股票形态", "wave_list/333"],
 ["股票K线图", "tricker_pie/000002"],
-["股票形态统计", "wave_list_all/"]
+["股票形态统计", "wave_list_all/"],
+["底价反转", "price_min_report/"]
 ]
 
 wavedata_list= [
@@ -88,11 +89,19 @@ def price_min_report(request):
     with open(file, 'r', encoding='utf-8') as f:
         max_data = json.load(f)
 
+    file=os.path.join(trade_base.home_path(), "configuration/trade/report/price_history.json")
+    with open(file, 'r', encoding='utf-8') as f:
+        min_max_history_data = json.load(f)
+
     context = {
             'line_min_index': json.dumps(list(min_data.keys()), ensure_ascii=False),
             'line_min_values': json.dumps(list(min_data.values()), ensure_ascii=False),
             'line_max_index': json.dumps(list(max_data.keys()), ensure_ascii=False),
             'line_max_values': json.dumps(list(max_data.values()), ensure_ascii=False),
+            'line_history_min_index': json.dumps(list(min_max_history_data["min"].keys()), ensure_ascii=False),
+            'line_history_min_values': json.dumps(list(min_max_history_data["min"].values()), ensure_ascii=False),
+            'line_history_max_index': json.dumps(list(min_max_history_data["max"].keys()), ensure_ascii=False),
+            'line_history_max_values': json.dumps(list(min_max_history_data["max"].values()), ensure_ascii=False),
             }
 
     return render(request, 'polls/price_min_report.html', context)
