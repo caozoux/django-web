@@ -18,36 +18,6 @@ index_list= [
 ["底价反转", "price_min_report/"]
 ]
 
-wavedata_list= [
-"333",
-"133",
-"233",
-"222",
-"221",
-"331",
-"332",
-"223",
-"111",
-"112",
-"113",
-"121",
-"122",
-"123",
-"131",
-"132",
-"211",
-"212",
-"213",
-"231",
-"232",
-"311",
-"312",
-"313",
-"321",
-"322",
-"323"
-]
-
 def _get_wave_data(timestr, wave_type):
     filename="/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json"
     if not os.path.exists(filename):
@@ -112,8 +82,10 @@ def wave_list_all(request):
     filename="/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/"+timestr+"_wave_3.json"
     with open(filename,'r') as f:
         data = json.load(f)
-    for item in data["tricker_list_dict"].keys():
-        wavelist.append([item, len(data["tricker_list_dict"][item]), data["tricker_list_dict"][item]])
+
+    sorted_dict_desc = dict(sorted(data["tricker_list_dict"].items(), key=lambda item: len(item[1]), reverse=True))
+    for item in sorted_dict_desc.keys():
+        wavelist.append([item, len(sorted_dict_desc[item]), sorted_dict_desc[item]])
 
     tricker_id_list  = data["tricker_list_dict"]["333"]
 
