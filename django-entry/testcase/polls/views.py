@@ -198,13 +198,13 @@ def tricker_pie_noargs(request):
     if request.method == "POST":
         tricker_id = request.POST.get("tricker_id")
         report_data=[]
-        tricker_data = trade_base.company_trade_load(tricker_id)
+        tricker_data = trade_base.company_trade_loadne(tricker_id)
         for key in tricker_data.keys():
             item=[key, tricker_data[key]["open"], tricker_data[key]["close"], "%0.2f"%(tricker_data[key]["close"] - tricker_data[key]["open"]), "%0.4f"%((tricker_data[key]["close"] - tricker_data[key]["open"])/tricker_data[key]["open"]), tricker_data[key]["low"], tricker_data[key]["high"], tricker_data[key]["volume"] * tricker_data[key]["close"] , tricker_data[key]["volume"],"-"]
             report_data.append(item)
         with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/2025-03-19_wave_3.json",'r') as f:
             data = json.load(f)
-        print(report_data)
+        #print(report_data)
         return JsonResponse({"obj": report_data})
     else:
         return render(request, 'polls/tricker_pie.html', )
@@ -219,7 +219,7 @@ def tricker_pie(request, tricker_id):
 
     data={'items':report_data}
     context = {'report_data': json.dumps(data)}
-    print(report_data)
+    #print("zz", json.dumps(data))
     return render(request, 'polls/tricker_pie.html', context)
 
 @csrf_exempt
@@ -262,8 +262,11 @@ def line_shows(request):
     if request.method == "POST":
         report_data=[]
         number_list=[]
+        #跌数kj组
         number_list_0=[]
+        #平数组
         number_list_1=[]
+        #涨数k组
         number_list_2=[]
         with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/day_du.json",'r') as f:
             data = json.load(f)
@@ -288,6 +291,56 @@ def line_shows(request):
         return JsonResponse({"obj": report_data})
     else:
         return render(request, 'polls/line_shows.html', )
+@csrf_exempt
+def comanpy_day_mode(request, tricker_id):
+    if request.method == "POST":
+
+        tricker_data = trade_base.company_trade_load(tricker_id)
+
+        report_data=[]
+        report_data1=[]
+        tricker_list=[]
+        number_list=[]
+        number_list_0=[]
+        number_list_1=[]
+        number_list_2=[]
+        with open("/home/zc/github/markket_project/stock_date/configuration/trade/day_mode/day_du.json",'r') as f:
+            data = json.load(f)
+        report_data.append(["涨"])
+        for item in data.values():
+            if item[0] == 0 and len(number_list_0) != 0:
+                number_list_0.append(number_list_0[-1])
+                number_list_1.append(number_list_1[-1])
+                number_list_2.append(number_list_2[-1])
+            else:
+                number_list_0.append(item[0])
+                number_list_1.append(item[1])
+                number_list_2.append(item[2])
+        report_data.append(list(data.keys())[-40:])
+        #number_list.append(number_list_0)
+        #number_list.append(number_list_1)
+        #number_list.append(number_list_2)
+
+        for key in data.keys():
+            print(key)
+            if not key in tricker_data.keys():
+                tricker_list.append(0)
+                continue
+            change_value = float(tricker_data[key]["change"])
+            if change_value > 0:
+                tricker_list.append(4000)
+            elif change_value < 0:
+                tricker_list.append(0)
+            else:
+                tricker_list.append(0)
+
+        report_data.append(number_list_2[-40:])
+        report_data.append(tricker_list[-40:])
+        print(report_data)
+        return JsonResponse({"obj": report_data})
+    else:
+        context = {'tricker_id': tricker_id}
+        return render(request, 'polls/comanpy_day_mode.html', context)
 
 @csrf_exempt
 def wave_list(request, wave_type):
@@ -307,4 +360,52 @@ def wave_list_noargs(request):
         return JsonResponse({"obj": report_data})
     else:
         return render(request, 'polls/wave_list.html', )
+
+@csrf_exempt
+def stock_price_movement(request):
+    if request.method == "POST":
+        # Sample stock price data - in real app, this would come from database or API
+        # Format: [date, open, high, low, close, volume]
+        sample_data = [
+            ["2025-01-01", 100, 102, 98, 101, 100000],
+            ["2025-01-02", 101, 105, 100, 104, 120000],
+            ["2025-01-03", 104, 106, 103, 103, 90000],
+            ["2025-01-04", 103, 103, 100, 100, 80000],
+            ["2025-01-05", 100, 102, 99, 102, 110000],
+            ["2025-01-06", 102, 107, 101, 106, 130000],
+            ["2025-01-07", 106, 108, 105, 105, 95000]
+        ]
+        
+        # Calculate movement: -1 = down, 0 = flat, 1 = up
+        movements = []
+        dates = []
+        prices = []
+        
+        for i in range(len(sample_data)):
+            date = sample_data[i][0]
+            close_price = sample_data[i][4]
+            dates.append(date)
+            prices.append(close_price)
+            
+            if i == 0:
+                movements.append(0)  # First day, no comparison
+            else:
+                prev_close = sample_data[i-1][4]
+                if close_price > prev_close:
+                    movements.append(1)   # Up
+                elif close_price < prev_close:
+                    movements.append(-1)  # Down
+                else:
+                    movements.append(0)   # Flat
+        
+        # Prepare data for ECharts
+        chart_data = [
+            dates,           # X-axis dates
+            prices,          # Y-axis prices
+            movements        # Movement data
+        ]
+        
+        return JsonResponse({"obj": chart_data})
+    else:
+        return render(request, 'polls/stock_price_movement.html', )
 

@@ -1,0 +1,159 @@
+{% load static %}
+<html lang="en" style="height: 100%">
+<head>
+  <meta charset="utf-8">
+  <title>股票价格走势分析</title>
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'js/echarts.js' %}"></script>
+
+<script type="text/javascript">
+	function createChart(data) {
+		var dom = document.getElementById('container');
+		var myChart = echarts.init(dom, null, {
+		  renderer: 'canvas',
+		  useDirtyRect: false
+		});
+		
+		var dates = data[0];
+		var prices = data[1];
+		var movements = data[2];
+		
+		// Create movement labels
+		var movementLabels = movements.map(function(move) {
+			if (move === 1) return '↑';
+			if (move === -1) return '↓';
+			return '→';
+		});
+		
+		// Create colors based on movement
+		var colors = movements.map(function(move) {
+			if (move === 1) return '#00ff00';  // Green for up
+			if (move === -1) return '#ff0000'; // Red for down
+			return '#666666';                 // Gray for flat
+		});
+		
+		var option = {
+			title: {
+				text: '股票价格走势分析',
+				subtext: '每日股价走势及涨跌标记 (-1=跌, 0=平, 1=涨)',
+				left: 'center'
+			},
+			tooltip: {
+				trigger: 'axis',
+				formatter: function(params) {
+					var date = params[0].axisValue;
+					var price = params[0].data;
+					var movement = movements[params[0].dataIndex];
+					var movementText = movement === 1 ? '上涨' : movement === -1 ? '下跌' : '持平';
+					return '日期: ' + date + '<br/>' +
+						   '收盘价: ' + price + '<br/>' +
+						   '涨跌: ' + movement + ' (' + movementText + ')';
+				}
+			},
+			legend: {
+				data: ['股价', '涨跌标记'],
+				top: '10%'
+			},
+			toolbox: {
+				feature: {
+				  saveAsImage: {}
+				},
+				top: '10%',
+				right: '10%'
+			},
+			xAxis: {
+				type: 'category',
+				data: dates,
+				axisLabel: {
+					rotate: 45
+				}
+			},
+			yAxis: [
+				{
+					type: 'value',
+					name: '股价',
+					position: 'left'
+				},
+				{
+					type: 'value',
+					name: '涨跌标记',
+					position: 'right',
+					min: -2,
+					max: 2,
+					axisLabel: {
+						formatter: function(value) {
+							if (value === 1) return '↑';
+							if (value === -1) return '↓';
+							if (value === 0) return '→';
+							return '';
+						}
+					}
+				}
+			],
+			series: [
+				{
+					name: '股价',
+					type: 'line',
+					yAxisIndex: 0,
+					data: prices,
+					itemStyle: {
+						color: '#5470c6'
+					},
+					lineStyle: {
+						width: 3
+					},
+					smooth: true
+				},
+				{
+					name: '涨跌标记',
+					type: 'scatter',
+					yAxisIndex: 1,
+					data: movements,
+					symbolSize: function(value) {
+						return value === 0 ? 8 : 12;
+					},
+					itemStyle: {
+						color: function(params) {
+							var value = params.data;
+							if (value === 1) return '#00ff00';
+							if (value === -1) return '#ff0000';
+							return '#666666';
+						}
+					},
+					label: {
+						show: true,
+						formatter: function(params) {
+							var value = params.data;
+							if (value === 1) return '↑';
+							if (value === -1) return '↓';
+							return '→';
+						},
+						position: 'top'
+					}
+				}
+			]
+		};
+
+		if (option && typeof option === 'object') {
+		  myChart.setOption(option);
+		}
+		window.addEventListener('resize', myChart.resize);
+	}
+	
+	window.onload = function () {
+		$.ajax({
+			url: "/polls/stock_price_movement/",
+			type: "POST",
+			data: {"k1": "v1"},
+			success: function (data) {
+				createChart(data["obj"]);
+			}
+		});
+	}
+</script>
+</body>
+</html>

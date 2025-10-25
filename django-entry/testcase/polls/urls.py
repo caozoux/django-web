@@ -30,4 +30,6 @@ urlpatterns = [
     path('wave_list/<str:wave_type>', views.wave_list, name='wave_list'),
     path('wave_list_all/', views.wave_list_all, name='wave_list_all'),
     path('price_min_report/', views.price_min_report, name='price_min_report'),
+    #股票每日涨跌和大盘涨跌的关系
+    path('comanpy_day_mode/<str:tricker_id>', views.comanpy_day_mode, name='comanpy_day_mode'),
 ]
