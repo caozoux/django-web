@@ -1,5 +1,4 @@
 # Python
-__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -31,4 +30,3 @@ db.sqlite3-journal
 # OS
 .DS_Store
 Thumbs.db
-__init__.py
