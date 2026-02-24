@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>形态图表 - {{ pattern_type }}</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script>
+        // 备用 CDN
+        window.echartsFallback = function() {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js';
+            script.onerror = function() {
+                document.getElementById('loading').innerHTML =
+                    '<div style="color: #dc3545; text-align: center; padding: 40px;">ECharts 加载失败，请检查网络连接或刷新页面重试</div>';
+            };
+            document.head.appendChild(script);
+        };
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .pattern-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .pattern-cell {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 6px;
+            margin: 0 3px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .up { background: #dc3545; }
+        .down { background: #28a745; }
+        .flat { background: #6c757d; }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 600px;
+            margin-bottom: 30px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .ticker-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .ticker-tag {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 15px;
+            padding: 5px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ticker-tag:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .ticker-tag.active {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 形态图表分析</h1>
+        <p class="subtitle">查看相同形态股票的价格走势对比</p>
+
+        <div class="header-info">
+            <div class="pattern-display" id="patternDisplay"></div>
+            <div class="info-item">
+                <span class="info-label">形态类型:</span>
+                <span class="info-value" id="patternTypeValue">{{ pattern_type }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">数据日期:</span>
+                <span class="info-value">{{ date }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">总股票数:</span>
+                <span class="info-value" id="totalTickers">-</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">显示股票:</span>
+                <span class="info-value" id="displayedTickers">-</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color up">3</div>
+                    <span>涨</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color flat">1</div>
+                    <span>平</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color down">2</div>
+                    <span>跌</span>
+                </div>
+            </div>
+            <a href="/stock/visualization/" class="btn btn-back">← 返回列表</a>
+        </div>
+
+        <div id="loading" class="loading">正在加载数据，请稍候...</div>
+
+        <div class="ticker-legend" id="tickerLegend"></div>
+
+        <div class="chart-container" id="chart"></div>
+    </div>
+
+    <script>
+        const patternType = '{{ pattern_type }}';
+        const date = '{{ date }}';
+        let chart = null;
+
+        // 等待 ECharts 加载完成
+        function waitForEcharts(callback) {
+            if (typeof echarts !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(function() {
+                    waitForEcharts(callback);
+                }, 100);
+            }
+        }
+
+        // 格式化形态显示
+        function formatPattern(pattern) {
+            return pattern.split('').map(char => {
+                const style = char === '3' ? 'up' : (char === '1' ? 'flat' : 'down');
+                return `<span class="pattern-cell ${style}">${char}</span>`;
+            }).join('');
+        }
+
+        // 生成颜色
+        function generateColor(index, total) {
+            const hue = (index * 137.508) % 360; // 黄金角度，颜色分布更均匀
+            return `hsl(${hue}, 70%, 50%)`;
+        }
+
+        // 加载数据
+        async function loadData() {
+            try {
+                const response = await fetch(`/stock/api/pattern-chart-data/${patternType}/?date=${date}`);
+                const result = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (result.success) {
+                    document.getElementById('totalTickers').textContent = result.total_tickers;
+                    document.getElementById('displayedTickers').textContent = result.displayed_tickers;
+                    document.getElementById('patternDisplay').innerHTML = formatPattern(result.pattern_type);
+
+                    renderChart(result.data);
+                    renderTickerLegend(result.data);
+                } else {
+                    document.getElementById('chart').innerHTML =
+                        `<div class="loading" style="color: #999;">${result.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                console.error('加载数据失败:', error);
+                document.getElementById('chart').innerHTML =
+                    '<div class="loading" style="color: #dc3545;">加载数据失败: ' + error.message + '</div>';
+            }
+        }
+
+        // 渲染图表
+        function renderChart(data) {
+            const tickers = Object.keys(data);
+            const dates = tickers.length > 0 ? data[tickers[0]].dates : [];
+
+            const series = tickers.map((ticker, index) => ({
+                name: ticker,
+                type: 'line',
+                data: data[ticker].closes,
+                symbol: 'none',
+                lineStyle: {
+                    width: 1.5
+                },
+                color: generateColor(index, tickers.length)
+            }));
+
+            const option = {
+                title: {
+                    text: `形态 ${patternType} 股票价格走势`,
+                    left: 'center',
+                    top: 10
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        let result = params[0].axisValue + '<br/>';
+                        params.forEach(param => {
+                            result += `${param.marker} ${param.seriesName}: ${param.value.toFixed(2)}<br/>`;
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    type: 'scroll',
+                    orient: 'horizontal',
+                    bottom: 10,
+                    data: tickers,
+                    selected: tickers.reduce((acc, ticker, index) => {
+                        // 默认只显示前 10 条线
+                        acc[ticker] = index < 10;
+                        return acc;
+                    }, {})
+                },
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        start: 0,
+                        end: 100
+                    },
+                    {
+                        type: 'slider',
+                        start: 0,
+                        end: 100,
+                        bottom: 50
+                    }
+                ],
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: 100,
+                    top: 60,
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: dates,
+                    axisLabel: {
+                        rotate: 45,
+                        interval: Math.ceil(dates.length / 20)
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    scale: true,
+                    name: '收盘价',
+                    nameTextStyle: {
+                        padding: [0, 0, 0, 20]
+                    }
+                },
+                series: series
+            };
+
+            chart = echarts.init(document.getElementById('chart'));
+            chart.setOption(option);
+
+            // 响应窗口大小变化
+            window.addEventListener('resize', () => {
+                chart.resize();
+            });
+        }
+
+        // 渲染股票图例
+        function renderTickerLegend(data) {
+            const container = document.getElementById('tickerLegend');
+            const tickers = Object.keys(data);
+
+            container.innerHTML = tickers.map((ticker, index) =>
+                `<span class="ticker-tag" onclick="toggleTicker('${ticker}')">${ticker}</span>`
+            ).join('');
+        }
+
+        // 切换股票显示
+        function toggleTicker(ticker) {
+            const option = chart.getOption();
+            const legendData = option.legend[0].data;
+            const selectedIndex = legendData.indexOf(ticker);
+
+            if (selectedIndex >= 0) {
+                option.legend[0].selected[ticker] = !option.legend[0].selected[ticker];
+                chart.setOption(option);
+            }
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            // 检查 ECharts 是否加载，如果超过5秒还没加载，尝试备用 CDN
+            let echartsTimeout = setTimeout(function() {
+                if (typeof echarts === 'undefined') {
+                    console.log('ECharts not loaded, trying fallback...');
+                    if (typeof window.echartsFallback === 'function') {
+                        window.echartsFallback();
+                    }
+                }
+            }, 5000);
+
+            // 等待 ECharts 加载完成后再加载数据
+            waitForEcharts(function() {
+                clearTimeout(echartsTimeout);
+                console.log('ECharts loaded successfully');
+                loadData();
+            });
+        };
+    </script>
+</body>
+</html>
