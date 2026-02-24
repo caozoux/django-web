@@ -30,3 +30,6 @@ db.sqlite3-journal
 # OS
 .DS_Store
 Thumbs.db
+__init__.py
+migrations
+frontend/

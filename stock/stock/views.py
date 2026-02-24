@@ -220,3 +220,56 @@ def get_available_dates(request):
             'error': str(e)
         })
 
+
+def pattern_chart_page(request, pattern_type):
+    """形态图表页面"""
+    date_str = request.GET.get('date', datetime.now().strftime('%Y-%m-%d'))
+
+    return render(request, 'pattern_chart.html', {
+        'pattern_type': pattern_type,
+        'date': date_str
+    })
+
+
+def get_pattern_chart_data(request, pattern_type):
+    """获取指定形态的股票收盘价数据"""
+    date_str = request.GET.get('date')
+    wavedata = load_wavedata(date_str)
+
+    if not wavedata:
+        return JsonResponse({
+            'success': False,
+            'error': '未找到波浪数据文件'
+        })
+
+    tickers = wavedata.get(pattern_type, [])
+
+    # 限制股票数量，避免图表过于拥挤
+    max_tickers = 50
+    selected_tickers = tickers[:max_tickers]
+
+    # 获取每个股票的收盘价数据
+    chart_data = {}
+
+    for ticker in selected_tickers:
+        history = StockHistory.objects.filter(
+            ticker=ticker
+        ).order_by('trade_date')
+
+        dates = [h.trade_date.strftime('%Y-%m-%d') for h in history]
+        closes = [float(h.close_price) for h in history]
+
+        chart_data[ticker] = {
+            'dates': dates,
+            'closes': closes
+        }
+
+    return JsonResponse({
+        'success': True,
+        'pattern_type': pattern_type,
+        'date': date_str or datetime.now().strftime('%Y-%m-%d'),
+        'total_tickers': len(tickers),
+        'displayed_tickers': len(selected_tickers),
+        'data': chart_data
+    })
+

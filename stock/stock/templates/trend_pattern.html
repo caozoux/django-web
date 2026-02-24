@@ -246,6 +246,8 @@
             color: #495057;
             transition: all 0.2s;
             cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .ticker-item:hover {
@@ -253,6 +255,15 @@
             color: white;
             border-color: #667eea;
             transform: scale(1.05);
+            text-decoration: none;
+        }
+
+        .ticker-item:visited {
+            color: #495057;
+        }
+
+        .ticker-item:visited:hover {
+            color: white;
         }
 
         .no-data {
@@ -293,6 +304,21 @@
 
         .load-more.hidden {
             display: none;
+        }
+
+        .btn-chart {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 6px 15px;
+            font-size: 13px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn-chart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
         }
     </style>
 </head>
@@ -429,6 +455,8 @@
                 return;
             }
 
+            const chartUrl = `/stock/chart/XXX/?date=${currentDate}`;
+
             container.innerHTML = allPatterns.map((p, index) => `
                 <div class="tree-node" data-pattern="${p.pattern_type}">
                     <div class="tree-header" onclick="toggleNode('${p.pattern_type}', ${index})">
@@ -436,6 +464,11 @@
                         <span class="tree-pattern">${formatPattern(p.pattern_type)}</span>
                         <span class="tree-count">${p.count} 只股票</span>
                         <span class="tree-detail">涨: ${p.up_count} | 平: ${p.flat_count} | 跌: ${p.down_count}</span>
+                        <a href="${chartUrl.replace('XXX', p.pattern_type)}"
+                           class="btn-chart"
+                           onclick="event.stopPropagation()">
+                            📊 查看图表
+                        </a>
                     </div>
                     <div class="tree-children" id="children-${p.pattern_type}">
                         <div class="ticker-grid" id="grid-${p.pattern_type}"></div>
@@ -512,25 +545,11 @@
         function renderTickerGrid(patternType, tickers) {
             const grid = document.getElementById(`grid-${patternType}`);
             grid.innerHTML = tickers.map(ticker =>
-                `<div class="ticker-item" title="点击复制">${ticker}</div>`
+                `<a href="https://gushitong.baidu.com/stock/ab-${ticker}"
+                   target="_blank"
+                   class="ticker-item"
+                   title="点击查看详情">${ticker}</a>`
             ).join('');
-
-            // 添加复制功能
-            grid.querySelectorAll('.ticker-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    navigator.clipboard.writeText(this.textContent).then(() => {
-                        const originalText = this.textContent;
-                        this.textContent = '已复制!';
-                        this.style.background = '#28a745';
-                        this.style.color = 'white';
-                        setTimeout(() => {
-                            this.textContent = originalText;
-                            this.style.background = '';
-                            this.style.color = '';
-                        }, 1000);
-                    });
-                });
-            });
         }
 
         function loadMoreTickers(patternType, event) {

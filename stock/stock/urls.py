@@ -14,4 +14,8 @@ urlpatterns = [
     # 波浪数据相关URL - 从JSON文件读取
     path('api/pattern-tickers/<str:pattern_type>/', views.get_pattern_tickers, name='pattern_tickers'),
     path('api/available-dates/', views.get_available_dates, name='available_dates'),
+
+    # 形态图表相关URL
+    path('chart/<str:pattern_type>/', views.pattern_chart_page, name='pattern_chart_page'),
+    path('api/pattern-chart-data/<str:pattern_type>/', views.get_pattern_chart_data, name='pattern_chart_data'),
 ]
