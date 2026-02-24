@@ -1127,7 +1127,127 @@ ta-lib
 8. **前端开发**: 实现数据可视化和策略管理界面
 9. **测试验证**: 使用历史数据验证策略有效性
 
+## 11. 股票涨跌形态分析功能
+
+### 11.1 功能概述
+按照3天、5天统计股票的连续涨跌形态，将涨跌编码为数字后进行分类统计和可视化展示。
+
+### 11.2 编码规则
+- **涨**: 3
+- **平**: 1
+- **跌**: 2
+
+例如：
+- 333: 连续3天上涨
+- 332: 连续2天上涨后下跌
+- 222: 连续3天下跌
+
+### 11.3 数据模型
+
+```python
+class StockTrendPattern(models.Model):
+    """股票涨跌形态模型"""
+    pattern_type = models.CharField(max_length=20, verbose_name='形态类型', help_text='如: 333, 332等')
+    days = models.IntegerField(verbose_name='统计天数', help_text='3天或5天')
+    ticker = models.CharField(max_length=10, verbose_name='股票代码')
+    pattern_date = models.DateField(verbose_name='形态结束日期')
+    pattern_detail = models.JSONField(verbose_name='形态详情', help_text='存储每日涨跌详情')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        managed = True
+        db_table = 'stock_trend_pattern'
+        verbose_name = '股票涨跌形态'
+        verbose_name_plural = '股票涨跌形态'
+        unique_together = (('ticker', 'pattern_date', 'days'),)
+
+    def __str__(self):
+        return f"{self.ticker} - {self.pattern_type} ({self.days}天)"
+```
+
+### 11.4 视图功能
+
+- **generate_trend_patterns()**: 生成指定天数的涨跌形态数据
+  - 遍历所有股票，使用滑动窗口分析
+  - 根据收盘价变化判断涨跌（涨=3, 平=1, 跌=2）
+  - 创建或更新形态记录
+
+- **get_patterns_by_type()**: 获取指定形态的所有股票
+  - 根据天数和形态类型查询
+  - 返回该形态下的所有股票列表
+
+- **get_all_pattern_types()**: 获取所有形态类型及其统计
+  - 统计每种形态的股票数量
+  - 返回按数量排序的结果
+
+- **trend_pattern_visualization()**: 可视化页面
+  - 渲染HTML模板
+  - 提供交互式界面
+
+- **trend_pattern_data()**: 获取可视化数据
+  - 返回形态统计信息
+  - 包含每种形态的涨跌次数统计
+
+### 11.5 URL路由
+
+| 路径 | 方法 | 说明 |
+|------|------|------|
+| `/stock/visualization/` | GET | 可视化页面 |
+| `/stock/api/generate-patterns/<days>/` | POST | 生成数据（days=3或5） |
+| `/stock/api/patterns/<days>/<pattern_type>/` | GET | 查询特定形态的股票 |
+| `/stock/api/trend-pattern-data/` | GET | 获取统计数据 |
+
+### 11.6 可视化界面特性
+
+1. **现代化响应式设计**
+   - 渐变色背景和卡片式布局
+   - 悬停动画效果
+   - 适配各种屏幕尺寸
+
+2. **交互功能**
+   - 3天/5天形态切换
+   - 一键生成数据
+   - 点击形态卡片查看详情
+   - 实时加载状态提示
+
+3. **数据展示**
+   - 图例说明（涨/平/跌）
+   - 形态卡片网格显示
+   - 形态详情统计（涨跌平数量）
+   - 股票列表表格
+
+4. **颜色编码**
+   - 涨（3）: 绿色 (#28a745)
+   - 跌（2）: 红色 (#dc3545)
+   - 平（1）: 灰色 (#6c757d)
+
+### 11.7 使用方法
+
+1. 启动Django服务：
+   ```bash
+   python manage.py runserver
+   ```
+
+2. 访问可视化页面：
+   ```
+   http://localhost:8000/stock/visualization/
+   ```
+
+3. 操作步骤：
+   - 选择统计天数（3天或5天）
+   - 点击"生成数据"按钮分析现有股票数据
+   - 查看各种形态及其股票数量
+   - 点击任意形态卡片查看该形态下的具体股票列表
+
+### 11.8 管理后台
+
+通过Django Admin可以管理涨跌形态数据：
+- 查看所有形态记录
+- 按形态类型、天数、日期筛选
+- 查看详细形态信息
+
 ---
 
-*文档版本: 1.0*
+*文档版本: 1.1*
 *创建日期: 2026-02-23*
+*更新日期: 2026-02-24*

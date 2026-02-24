@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票涨跌形态分析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .up { background: #dc3545; }      /* 涨 - 红色 */
+        .down { background: #28a745; }    /* 跌 - 绿色 */
+        .flat { background: #6c757d; }    /* 平 - 灰色 */
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-selector label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .date-selector select {
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-refresh {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 25px;
+        }
+
+        .btn-refresh:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-expand-all {
+            background: #6c757d;
+            color: white;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .data-info {
+            text-align: center;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #1976d2;
+            font-size: 14px;
+        }
+
+        /* 树形结构样式 */
+        .tree-container {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tree-node {
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .tree-node:last-child {
+            border-bottom: none;
+        }
+
+        .tree-header {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            user-select: none;
+        }
+
+        .tree-header:hover {
+            background-color: #f8f9fa;
+        }
+
+        .tree-toggle {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            transition: transform 0.3s;
+        }
+
+        .tree-toggle.expanded {
+            transform: rotate(90deg);
+        }
+
+        .tree-toggle.hidden {
+            visibility: hidden;
+        }
+
+        .tree-pattern {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            margin-right: 15px;
+        }
+
+        .tree-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .tree-detail {
+            color: #666;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .tree-children {
+            display: none;
+            padding-left: 44px;
+            background: #fafafa;
+        }
+
+        .tree-children.expanded {
+            display: block;
+        }
+
+        /* 股票代码列表样式 */
+        .ticker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+            padding: 15px;
+        }
+
+        .ticker-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 8px 12px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: #495057;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .ticker-item:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        .pattern-cell {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 0 2px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* 加载更多按钮 */
+        .load-more {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            text-align: center;
+            background: #f8f9fa;
+            border: none;
+            border-top: 1px solid #e9ecef;
+            color: #667eea;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .load-more:hover {
+            background: #e9ecef;
+        }
+
+        .load-more.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 股票涨跌形态分析</h1>
+        <p class="subtitle">统计股票的连续涨跌模式，帮助发现市场规律</p>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color up">3</div>
+                <span>涨 (↑)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color flat">1</div>
+                <span>平 (→)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color down">2</div>
+                <span>跌 (↓)</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="date-selector">
+                <label for="dateSelect">选择日期：</label>
+                <select id="dateSelect" onchange="loadData()">
+                    <option value="">加载中...</option>
+                </select>
+            </div>
+            <div>
+                <button class="btn btn-expand-all" onclick="expandAll()">全部展开</button>
+                <button class="btn btn-expand-all" onclick="collapseAll()">全部折叠</button>
+                <button class="btn btn-refresh" onclick="loadData()">🔄 刷新数据</button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            正在加载数据，请稍候...
+        </div>
+
+        <div class="data-info" id="dataInfo"></div>
+
+        <div class="tree-container" id="treeContainer">
+            <div class="no-data">暂无数据</div>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = null;
+        let availableDates = [];
+        let allPatterns = [];
+        let loadedTickers = {};
+
+        // 页面加载时初始化
+        window.onload = function() {
+            loadAvailableDates();
+        };
+
+        async function loadAvailableDates() {
+            try {
+                const response = await fetch('/stock/api/available-dates/');
+                const result = await response.json();
+
+                if (result.success) {
+                    availableDates = result.dates;
+                    populateDateSelector(result.latest);
+
+                    if (result.latest) {
+                        currentDate = result.latest;
+                        loadData();
+                    } else {
+                        document.getElementById('treeContainer').innerHTML =
+                            '<div class="no-data">暂无可用数据</div>';
+                    }
+                }
+            } catch (error) {
+                console.error('加载日期失败:', error);
+            }
+        }
+
+        function populateDateSelector(latestDate) {
+            const select = document.getElementById('dateSelect');
+            select.innerHTML = availableDates.map(date =>
+                `<option value="${date}">${date}</option>`
+            ).join('');
+
+            if (latestDate) {
+                select.value = latestDate;
+            }
+        }
+
+        function loadData() {
+            const dateSelect = document.getElementById('dateSelect');
+            currentDate = dateSelect.value;
+
+            if (!currentDate) {
+                alert('请选择一个日期');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            fetch(`/stock/api/trend-pattern-data/?date=${currentDate}`)
+                .then(response => response.json())
+                .then(result => {
+                    loading.style.display = 'none';
+
+                    if (result.success) {
+                        document.getElementById('dataInfo').textContent =
+                            `数据日期: ${result.date} | 总股票数: ${result.total_stocks}`;
+                        allPatterns = result.patterns;
+                        loadedTickers = {};
+                        renderTree();
+                    } else {
+                        document.getElementById('treeContainer').innerHTML =
+                            `<div class="no-data">${result.error}</div>`;
+                        document.getElementById('dataInfo').textContent = '';
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    console.error('加载数据失败:', error);
+                    alert('加载数据失败: ' + error.message);
+                });
+        }
+
+        function renderTree() {
+            const container = document.getElementById('treeContainer');
+
+            if (allPatterns.length === 0) {
+                container.innerHTML = '<div class="no-data">暂无数据</div>';
+                return;
+            }
+
+            container.innerHTML = allPatterns.map((p, index) => `
+                <div class="tree-node" data-pattern="${p.pattern_type}">
+                    <div class="tree-header" onclick="toggleNode('${p.pattern_type}', ${index})">
+                        <span class="tree-toggle" id="toggle-${p.pattern_type}">▶</span>
+                        <span class="tree-pattern">${formatPattern(p.pattern_type)}</span>
+                        <span class="tree-count">${p.count} 只股票</span>
+                        <span class="tree-detail">涨: ${p.up_count} | 平: ${p.flat_count} | 跌: ${p.down_count}</span>
+                    </div>
+                    <div class="tree-children" id="children-${p.pattern_type}">
+                        <div class="ticker-grid" id="grid-${p.pattern_type}"></div>
+                        <button class="load-more hidden" id="loadmore-${p.pattern_type}"
+                                onclick="loadMoreTickers('${p.pattern_type}', event)">
+                            加载更多...
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatPattern(pattern) {
+            return pattern.split('').map(char => {
+                const style = char === '3' ? 'up' : (char === '1' ? 'flat' : 'down');
+                return `<span class="pattern-cell ${style}">${char}</span>`;
+            }).join('');
+        }
+
+        function toggleNode(patternType, index) {
+            const toggle = document.getElementById(`toggle-${patternType}`);
+            const children = document.getElementById(`children-${patternType}`);
+
+            if (children.classList.contains('expanded')) {
+                children.classList.remove('expanded');
+                toggle.classList.remove('expanded');
+                toggle.textContent = '▶';
+            } else {
+                children.classList.add('expanded');
+                toggle.classList.add('expanded');
+                toggle.textContent = '▼';
+
+                // 首次展开时加载数据
+                if (!loadedTickers[patternType]) {
+                    loadTickers(patternType, allPatterns[index].count);
+                }
+            }
+        }
+
+        function loadTickers(patternType, totalCount) {
+            const grid = document.getElementById(`grid-${patternType}`);
+            const loadMoreBtn = document.getElementById(`loadmore-${patternType}`);
+
+            grid.innerHTML = '<div class="no-data" style="padding: 20px;">加载中...</div>';
+
+            fetch(`/stock/api/pattern-tickers/${patternType}/?date=${currentDate}`)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        loadedTickers[patternType] = result.tickers;
+
+                        // 默认显示前 50 只
+                        const displayCount = Math.min(50, result.tickers.length);
+                        renderTickerGrid(patternType, result.tickers.slice(0, displayCount));
+
+                        // 如果还有更多，显示加载更多按钮
+                        if (result.tickers.length > 50) {
+                            loadMoreBtn.classList.remove('hidden');
+                            loadMoreBtn.dataset.loaded = displayCount;
+                            loadMoreBtn.dataset.total = result.tickers.length;
+                        } else {
+                            loadMoreBtn.classList.add('hidden');
+                        }
+                    } else {
+                        grid.innerHTML = `<div class="no-data">${result.error}</div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('加载股票代码失败:', error);
+                    grid.innerHTML = '<div class="no-data">加载失败</div>';
+                });
+        }
+
+        function renderTickerGrid(patternType, tickers) {
+            const grid = document.getElementById(`grid-${patternType}`);
+            grid.innerHTML = tickers.map(ticker =>
+                `<div class="ticker-item" title="点击复制">${ticker}</div>`
+            ).join('');
+
+            // 添加复制功能
+            grid.querySelectorAll('.ticker-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    navigator.clipboard.writeText(this.textContent).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = '已复制!';
+                        this.style.background = '#28a745';
+                        this.style.color = 'white';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                            this.style.background = '';
+                            this.style.color = '';
+                        }, 1000);
+                    });
+                });
+            });
+        }
+
+        function loadMoreTickers(patternType, event) {
+            event.stopPropagation();
+
+            const loadMoreBtn = document.getElementById(`loadmore-${patternType}`);
+            const currentLoaded = parseInt(loadMoreBtn.dataset.loaded);
+            const totalCount = parseInt(loadMoreBtn.dataset.total);
+            const allTickers = loadedTickers[patternType];
+
+            const newCount = Math.min(currentLoaded + 50, totalCount);
+            renderTickerGrid(patternType, allTickers.slice(0, newCount));
+
+            if (newCount >= totalCount) {
+                loadMoreBtn.classList.add('hidden');
+            } else {
+                loadMoreBtn.dataset.loaded = newCount;
+            }
+        }
+
+        function expandAll() {
+            allPatterns.forEach((p, index) => {
+                const children = document.getElementById(`children-${p.pattern_type}`);
+                const toggle = document.getElementById(`toggle-${p.pattern_type}`);
+
+                if (!children.classList.contains('expanded')) {
+                    toggleNode(p.pattern_type, index);
+                }
+            });
+        }
+
+        function collapseAll() {
+            allPatterns.forEach(p => {
+                const children = document.getElementById(`children-${p.pattern_type}`);
+                const toggle = document.getElementById(`toggle-${p.pattern_type}`);
+
+                if (children && children.classList.contains('expanded')) {
+                    children.classList.remove('expanded');
+                    toggle.classList.remove('expanded');
+                    toggle.textContent = '▶';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
