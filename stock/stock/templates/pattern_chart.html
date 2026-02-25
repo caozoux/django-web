@@ -26,8 +26,81 @@
 
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
+            display: flex;
+        }
+
+        /* 左侧导航栏样式 */
+        .sidebar {
+            width: 240px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar-header h1 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .nav-menu {
+            padding: 15px 0;
+        }
+
+        .nav-category {
+            padding: 10px 20px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-color: #ffd700;
+            color: white;
+            font-weight: 500;
+        }
+
+        .nav-icon {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            margin-left: 240px;
             padding: 20px;
         }
 
@@ -38,6 +111,20 @@
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 10px;
+            }
         }
 
         h1 {
@@ -211,6 +298,33 @@
     </style>
 </head>
 <body>
+    <!-- 左侧导航栏 -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>📊 股票量化系统</h1>
+            <p>Stock Quantitative Trading</p>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-category">主要功能</div>
+            <a href="/" class="nav-item" data-page="home">
+                <span class="nav-icon">🏠</span>
+                <span>市场可视化</span>
+            </a>
+            <a href="/stock/visualization/" class="nav-item" data-page="trend">
+                <span class="nav-icon">📈</span>
+                <span>涨跌形态分析</span>
+            </a>
+
+            <div class="nav-category">分析工具</div>
+            <a href="/stock/chart/33333/" class="nav-item active" data-page="chart">
+                <span class="nav-icon">📊</span>
+                <span>形态图表</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <div class="main-content">
     <div class="container">
         <h1>📈 形态图表分析</h1>
         <p class="subtitle">查看相同形态股票的价格走势对比</p>
@@ -451,5 +565,6 @@
             });
         };
     </script>
+    </div>
 </body>
 </html>

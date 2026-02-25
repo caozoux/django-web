@@ -266,4 +266,8 @@ def stock_detail(request, ticker):
 
 def index(request):
     """首页模板"""
-    return render(request, 'index.html')
+    from django.utils import timezone
+    import time
+    return render(request, 'index.html', {
+        'timestamp': str(int(time.time()))
+    })

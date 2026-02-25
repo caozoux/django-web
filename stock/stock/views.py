@@ -242,7 +242,10 @@ def get_pattern_chart_data(request, pattern_type):
             'error': '未找到波浪数据文件'
         })
 
-    tickers = wavedata.get(pattern_type, [])
+    tickers_data = wavedata.get(pattern_type, [])
+
+    # 从对象数组中提取股票代码列表
+    tickers = [item['ticker'] for item in tickers_data]
 
     # 限制股票数量，避免图表过于拥挤
     max_tickers = 50
