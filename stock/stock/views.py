@@ -6,6 +6,9 @@ from decimal import Decimal
 from datetime import datetime
 import os
 import json
+import traceback
+from contextlib import redirect_stdout
+import io
 from .models import StockHistory, StockTrendPattern, WAVEDATA_DIR, load_wavedata
 from django.db import transaction
 
@@ -417,16 +420,13 @@ def run_custom_code(request):
             })
 
         # 构建执行环境
-        import io
-        import sys
-        import traceback
-
         stdout_capture = io.StringIO()
 
         # 准备命名空间
         namespace = {
-            '__name__': '__exec__',
+            '__name__': '__main__',
             '__builtins__': {
+                '__import__': __import__,
                 'print': lambda *args: stdout_capture.write(' '.join(str(a) for a in args) + '\\n'),
                 'len': len,
                 'sum': sum,
