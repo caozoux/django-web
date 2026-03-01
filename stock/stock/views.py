@@ -324,6 +324,12 @@ def get_stock_price_data(request, ticker):
         # 第一天没有涨跌比较，用灰色
         colors.insert(0, '#909399')
 
+        # 计算涨跌幅（百分比）
+        changes = [None]  # 第一天没有涨跌幅
+        for i in range(1, len(closes)):
+            change = ((closes[i] - closes[i-1]) / closes[i-1]) * 100
+            changes.append(change)
+
         return JsonResponse({
             'success': True,
             'ticker': ticker,
@@ -337,7 +343,8 @@ def get_stock_price_data(request, ticker):
                 'colors': colors,
                 'ma1': ma1,
                 'ma2': ma2,
-                'ma3': ma3
+                'ma3': ma3,
+                'changes': changes
             }
         })
 

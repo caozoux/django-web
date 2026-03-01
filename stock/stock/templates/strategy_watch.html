@@ -576,6 +576,18 @@
                                 result += `${param.marker} ${seriesName}: ${value ? value.toFixed(2) : 'N/A'}<br/>`;
                             }
                         });
+
+                        // 添加涨跌幅显示
+                        const dataIndex = params[0].dataIndex;
+                        if (dataIndex > 0 && data.close[dataIndex] !== undefined && data.close[dataIndex - 1] !== undefined) {
+                            const currentClose = data.close[dataIndex];
+                            const prevClose = data.close[dataIndex - 1];
+                            const change = ((currentClose - prevClose) / prevClose * 100).toFixed(2);
+                            const changeColor = change > 0 ? '#ef232a' : (change < 0 ? '#14b143' : '#909399');
+                            const changeText = change > 0 ? '↑' : (change < 0 ? '↓' : '→');
+                            result += `<br/><span style="color: ${changeColor}; font-weight: bold;">涨跌幅: ${changeText} ${Math.abs(change)}%</span>`;
+                        }
+
                         return result;
                     }
                 },
