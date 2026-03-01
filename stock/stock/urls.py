@@ -18,4 +18,8 @@ urlpatterns = [
     # 形态图表相关URL
     path('chart/<str:pattern_type>/', views.pattern_chart_page, name='pattern_chart_page'),
     path('api/pattern-chart-data/<str:pattern_type>/', views.get_pattern_chart_data, name='pattern_chart_data'),
+
+    # 策略观察页面
+    path('strategy/', views.strategy_watch_page, name='strategy_watch'),
+    path('api/stock-price-data/<str:ticker>/', views.get_stock_price_data, name='stock_price_data'),
 ]

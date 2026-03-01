@@ -543,6 +543,10 @@
                 <span class="nav-icon">📊</span>
                 <span>涨跌形态分析</span>
             </a>
+            <a href="/stock/strategy/" class="nav-item" data-page="strategy">
+                <span class="nav-icon">🔍</span>
+                <span>策略观察</span>
+            </a>
 
             <div class="nav-category">分析工具</div>
             <a href="/stock/chart/33333/" class="nav-item" data-page="chart">
@@ -580,6 +584,8 @@
                 } else if (currentPath.startsWith('/stock/chart/') && href.startsWith('/stock/chart/')) {
                     isActive = true;
                 } else if (currentPath === '/stock/visualization/' && href === '/stock/visualization/') {
+                    isActive = true;
+                } else if (currentPath === '/stock/strategy/' && href === '/stock/strategy/') {
                     isActive = true;
                 }
 

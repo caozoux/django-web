@@ -127,45 +127,6 @@
       </div>
     </div>
 
-    <!-- 数据表格 -->
-    <div class="data-table-section" v-if="statistics && statistics.tableData.length > 0">
-      <div class="table-header">
-        <h2 class="table-title">📋 详细数据</h2>
-        <button class="export-btn" @click="exportData">📥 导出数据</button>
-      </div>
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>上涨</th>
-              <th>下跌</th>
-              <th>平盘</th>
-              <th>总数</th>
-              <th>涨比</th>
-              <th>跌比</th>
-              <th>情绪</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(item, index) in statistics.tableData"
-              :key="index"
-              :class="{ 'row-up': item.sentiment > 0, 'row-down': item.sentiment < 0 }"
-            >
-              <td>{{ item.trade_date }}</td>
-              <td class="col-up">{{ item.up_count }}</td>
-              <td class="col-down">{{ item.down_count }}</td>
-              <td class="col-flat">{{ item.flat_count }}</td>
-              <td class="col-total">{{ item.total_count }}</td>
-              <td>{{ item.upRatio }}%</td>
-              <td>{{ item.downRatio }}%</td>
-              <td class="col-sentiment">{{ item.sentimentText }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </div>
 </template>
 

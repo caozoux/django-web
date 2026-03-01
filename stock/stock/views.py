@@ -276,3 +276,74 @@ def get_pattern_chart_data(request, pattern_type):
         'data': chart_data
     })
 
+
+def strategy_watch_page(request):
+    """策略观察页面"""
+    return render(request, 'strategy_watch.html')
+
+
+def get_stock_price_data(request, ticker):
+    """获取指定股票的价格数据（用于策略观察）"""
+    try:
+        # 获取该股票最近的交易数据
+        history = StockHistory.objects.filter(
+            ticker=ticker
+        ).order_by('trade_date')[:1000]  # 最多返回1000天数据
+
+        if not history.exists():
+            return JsonResponse({
+                'success': False,
+                'error': f'未找到股票 {ticker} 的数据'
+            })
+
+        data_list = list(history)
+
+        # 构建返回数据
+        dates = [h.trade_date.strftime('%Y-%m-%d') for h in data_list]
+        opens = [float(h.open_price) for h in data_list]
+        highs = [float(h.high_price) for h in data_list]
+        lows = [float(h.low_price) for h in data_list]
+        closes = [float(h.close_price) for h in data_list]
+        volumes = [float(h.volume) for h in data_list]
+
+        # 获取 MA 数据
+        ma1 = [float(h.ma_1) if h.ma_1 is not None else None for h in data_list]
+        ma2 = [float(h.ma_2) if h.ma_2 is not None else None for h in data_list]
+        ma3 = [float(h.ma_3) if h.ma_3 is not None else None for h in data_list]
+
+        # 计算涨跌颜色（根据收盘价）
+        colors = []
+        for i in range(1, len(closes)):
+            if closes[i] > closes[i-1]:
+                colors.append('#ef232a')  # 涨 - 红色
+            elif closes[i] < closes[i-1]:
+                colors.append('#14b143')  # 跌 - 绿色
+            else:
+                colors.append('#909399')  # 平 - 灰色
+
+        # 第一天没有涨跌比较，用灰色
+        colors.insert(0, '#909399')
+
+        return JsonResponse({
+            'success': True,
+            'ticker': ticker,
+            'data': {
+                'dates': dates,
+                'open': opens,
+                'high': highs,
+                'low': lows,
+                'close': closes,
+                'volume': volumes,
+                'colors': colors,
+                'ma1': ma1,
+                'ma2': ma2,
+                'ma3': ma3
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
