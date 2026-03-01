@@ -22,4 +22,6 @@ urlpatterns = [
     # 策略观察页面
     path('strategy/', views.strategy_watch_page, name='strategy_watch'),
     path('api/stock-price-data/<str:ticker>/', views.get_stock_price_data, name='stock_price_data'),
+    path('api/custom-chart-data/', views.get_custom_chart_data, name='custom_chart_data'),
+    path('api/run-custom-code/', views.run_custom_code, name='run_custom_code'),
 ]

@@ -1,9 +1,11 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Count, F, Case, When, Value
+from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 from datetime import datetime
 import os
+import json
 from .models import StockHistory, StockTrendPattern, WAVEDATA_DIR, load_wavedata
 from django.db import transaction
 
@@ -354,3 +356,153 @@ def get_stock_price_data(request, ticker):
             'error': str(e)
         })
 
+
+
+@csrf_exempt
+def get_custom_chart_data(request):
+    """接收自定义处理后的曲线数据"""
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'error': '只支持 POST 请求'
+        })
+
+    try:
+        data = json.loads(request.body)
+
+        # 验证数据格式
+        if 'series' not in data or 'dates' not in data:
+            return JsonResponse({
+                'success': False,
+                'error': '缺少必要字段: series, dates'
+            })
+
+        # 返回处理后的数据，直接转发
+        return JsonResponse({
+            'success': True,
+            'data': data
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@csrf_exempt
+def run_custom_code(request):
+    """执行用户自定义的 Python 代码"""
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'error': '只支持 POST 请求'
+        })
+
+    try:
+        data = json.loads(request.body)
+        code = data.get('code', '')
+        ticker = data.get('ticker', '')
+
+        if not code:
+            return JsonResponse({
+                'success': False,
+                'error': '代码不能为空'
+            })
+
+        if not ticker:
+            return JsonResponse({
+                'success': False,
+                'error': '股票代码不能为空'
+            })
+
+        # 构建执行环境
+        import io
+        import sys
+        import traceback
+
+        stdout_capture = io.StringIO()
+
+        # 准备命名空间
+        namespace = {
+            '__name__': '__exec__',
+            '__builtins__': {
+                'print': lambda *args: stdout_capture.write(' '.join(str(a) for a in args) + '\\n'),
+                'len': len,
+                'sum': sum,
+                'max': max,
+                'min': min,
+                'abs': abs,
+                'round': round,
+                'float': float,
+                'int': int,
+                'list': list,
+                'range': range,
+                'enumerate': enumerate,
+                'sorted': sorted,
+                'zip': zip,
+                'None': None,
+                'True': True,
+                'False': False,
+                'str': str,
+                'bool': bool,
+            }
+        }
+
+        # 将股票代码和模型导入命名空间
+        namespace['ticker'] = ticker
+        namespace['StockHistory'] = StockHistory
+
+        try:
+            # 执行用户代码
+            with redirect_stdout(stdout_capture):
+                exec(code, namespace)
+
+            # 获取输出
+            output = stdout_capture.getvalue()
+
+            # 尝试从命名空间获取结果
+            chart_data = namespace.get('chart_data')
+
+            if chart_data is None:
+                return JsonResponse({
+                    'success': False,
+                    'error': '代码执行后未定义 chart_data 变量。请在代码末尾定义 chart_data 字典，格式为 {"dates": [...], "series": [...]}',
+                    'output': output
+                })
+
+            # 验证数据格式
+            if 'dates' not in chart_data:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'chart_data 缺少 dates 字段',
+                    'output': output
+                })
+
+            if 'series' not in chart_data:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'chart_data 缺少 series 字段',
+                    'output': output
+                })
+
+            return JsonResponse({
+                'success': True,
+                'data': chart_data,
+                'output': output
+            })
+
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            return JsonResponse({
+                'success': False,
+                'error': str(e),
+                'traceback': error_trace,
+                'output': stdout_capture.getvalue()
+            })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })

@@ -542,6 +542,111 @@
                 </div>
 
                 <div class="chart-container" id="lineChart"></div>
+                <h3 style="text-align: center; margin: 40px 0 20px 0; color: #333;">自定义曲线图</h3>
+
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <div style="margin-bottom: 10px; color: #495057;">
+                        <strong>Python 代码编辑器：</strong>
+                    </div>
+                    <div style="margin-bottom: 10px; display: flex; gap: 10px; align-items: center;">
+                        <label style="font-weight: 500; color: #495057;">股票代码：</label>
+                        <input type="text" id="customTicker" value="600000" placeholder="输入股票代码"
+                               style="padding: 8px 12px; border: 1px solid #ced4da; border-radius: 5px; width: 150px; flex: 1;">
+                        <button onclick="runCustomCode()" class="btn-query" style="min-width: 120px;">▶ 运行代码</button>
+                    </div>
+                    <textarea id="customCode" rows="25"
+                              style="width: 100%; padding: 15px; border: 1px solid #ced4da; border-radius: 5px;
+                                           background: #2d2d2d; color: #f8f8f2; font-family: Courier New, monospace;
+                                           font-size: 13px; line-height: 1.6; resize: vertical; font-weight: 500;">from stock.models import StockHistory
+
+# 从数据库获取股票数据
+ticker = "{{customTicker}}"  # 股票代码（从输入框获取）
+history = StockHistory.objects.filter(
+    ticker=ticker
+).order_by("trade_date")[:100]
+
+data_list = list(history)
+dates = [h.trade_date.strftime("%Y-%m-%d") for h in data_list]
+close_prices = [float(h.close_price) for h in data_list]
+high_prices = [float(h.high_price) for h in data_list]
+low_prices = [float(h.low_price) for h in data_list]
+volumes = [float(h.volume) for h in data_list]
+
+# 自定义计算逻辑（示例：计算 SMA 和 EMA）
+def calculate_sma(data, period=20):
+    """计算简单移动平均"""
+    sma = []
+    for i in range(len(data)):
+        if i < period - 1:
+            sma.append(None)
+        else:
+            avg = sum(data[i-period+1:i+1]) / period
+            sma.append(avg)
+    return sma
+
+def calculate_ema(data, period=20):
+    """计算指数移动平均"""
+    ema = []
+    multiplier = 2 / (period + 1)
+    ema.append(data[0])
+    for i in range(1, len(data)):
+        ema_value = (data[i] - ema[i-1]) * multiplier + ema[i-1]
+        ema.append(ema_value)
+    return ema
+
+# 计算自定义指标
+sma5 = calculate_sma(close_prices, 5)
+sma20 = calculate_sma(close_prices, 20)
+ema20 = calculate_ema(close_prices, 20)
+
+# 定义输出数据（必须包含 dates 和 series 两个字段）
+chart_data = {
+    "dates": dates,
+    "series": [
+        {
+            "name": "收盘价",
+            "data": close_prices,
+            "type": "line",
+            "color": "#667eea",
+            "smooth": True,
+            "showSymbol": False
+        },
+        {
+            "name": "SMA5",
+            "data": sma5,
+            "type": "line",
+            "color": "#f59e0b",
+            "smooth": True,
+            "showSymbol": False
+        },
+        {
+            "name": "SMA20",
+            "data": sma20,
+            "type": "line",
+            "color": "#ff6b6b",
+            "smooth": True,
+            "showSymbol": False
+        },
+        {
+            "name": "EMA20",
+            "data": ema20,
+            "type": "line",
+            "color": "#06b6d4",
+            "smooth": True,
+            "showSymbol": False
+        }
+    ]
+}
+</textarea>
+
+                    <div id="codeOutput" style="margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #e0e0e0; border-radius: 5px;
+                                                   font-family: Courier New, monospace; font-size: 13px; display: none; min-height: 80px; max-height: 300px; overflow-y: auto;">
+                    </div>
+                </div>
+
+                <div class="chart-container" id="customChart"></div>
+
+
             `;
 
             // 初始化第一个图表
@@ -842,6 +947,160 @@
                 queryStock();
             }
         });
+
+        // 自定义曲线图变量
+        let myCustomChart = null;
+
+        // 加载自定义曲线图
+        // 运行自定义 Python 代码
+        async function runCustomCode() {
+            const ticker = document.getElementById("customTicker").value.trim();
+            const code = document.getElementById("customCode").value;
+            const outputDiv = document.getElementById("codeOutput");
+
+            if (!ticker) {
+                alert("请输入股票代码");
+                return;
+            }
+
+            if (!code.trim()) {
+                alert("请输入 Python 代码");
+                return;
+            }
+
+            // 显示输出区域
+            outputDiv.style.display = "block";
+            outputDiv.innerHTML = "<strong>正在执行代码...</strong><br/>";
+
+            try {
+                const response = await fetch("/stock/api/run-custom-code/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        ticker: ticker,
+                        code: code
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    outputDiv.innerHTML = "<strong>✓ 代码执行成功！</strong><br/><br/>";
+                    outputDiv.innerHTML += "输出：" + (result.output || "无") + "<br/><br/>";
+
+                    // 渲染图表
+                    renderCustomChart(result.data.dates, result.data.series);
+                } else {
+                    outputDiv.innerHTML = "<strong>✗ 执行失败：</strong><br/>" + result.error + "<br/><br/>";
+                    if (result.traceback) {
+                        outputDiv.innerHTML += "<strong>错误信息：</strong><br/>" + result.traceback;
+                    }
+                }
+            } catch (error) {
+                alert("请求失败：" + error.message);
+                outputDiv.style.display = "block";
+                outputDiv.innerHTML = "<strong>请求失败：</strong><br/>" + error.message;
+            }
+        }
+
+
+        // 计算简单移动平均
+        function calculateSMA(data, period) {
+            const sma = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) {
+                    sma.push(null);
+                } else {
+                    const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+                    sma.push(sum / period);
+                }
+            }
+            return sma;
+        }
+
+        // 渲染自定义图表
+        function renderCustomChart(dates, series) {
+            if (myCustomChart) {
+                myCustomChart.dispose();
+            }
+
+            myCustomChart = echarts.init(document.getElementById('customChart'));
+
+            const option = {
+                title: {
+                    text: '自定义曲线图',
+                    left: 'center',
+                    top: 10
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    },
+                    formatter: function(params) {
+                        let result = params[0].axisValue + '<br/>';
+                        params.forEach(param => {
+                            if (param.value !== null && param.value !== undefined) {
+                                result += `${param.marker} ${param.seriesName}: ${param.value.toFixed(2)}<br/>`;
+                            }
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: series.map(s => s.name),
+                    top: 40
+                },
+                grid: {
+                    left: '3%',
+                    right: '3%',
+                    bottom: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    boundaryGap: false,
+                    axisLabel: {
+                        rotate: 45,
+                        fontSize: 10
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    scale: true,
+                    name: '价格',
+                    nameTextStyle: {
+                        padding: [0, 0, 0, 20]
+                    }
+                },
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        start: 50,
+                        end: 100
+                    },
+                    {
+                        type: 'slider',
+                        start: 50,
+                        end: 100,
+                        height: 30
+                    }
+                ],
+                series: series
+            };
+
+            myCustomChart.setOption(option);
+
+            // 窗口大小变化时重绘图表
+            window.addEventListener('resize', function() {
+                if (myCustomChart) {
+                    myCustomChart.resize();
+                }
+            });
+        }
     </script>
 </body>
 </html>
