@@ -560,7 +560,7 @@
                                            font-size: 13px; line-height: 1.6; resize: vertical; font-weight: 500;">from stock.models import StockHistory
 
 # 从数据库获取股票数据
-ticker = "{{customTicker}}"  # 股票代码（从输入框获取）
+ticker = "{TICKER_PLACEHOLDER}"  # 股票代码（从输入框获取）
 history = StockHistory.objects.filter(
     ticker=ticker
 ).order_by("trade_date")[:100]
@@ -955,7 +955,7 @@ chart_data = {
         // 运行自定义 Python 代码
         async function runCustomCode() {
             const ticker = document.getElementById("customTicker").value.trim();
-            const code = document.getElementById("customCode").value;
+            const code = document.getElementById("customCode").value.replace(/{TICKER_PLACEHOLDER}/g, ticker);
             const outputDiv = document.getElementById("codeOutput");
 
             if (!ticker) {
