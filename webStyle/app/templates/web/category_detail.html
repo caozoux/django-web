@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} - WebStyle{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <!-- 面包屑 -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('web.index') }}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('web.categories') }}">分类</a></li>
+            <li class="breadcrumb-item active">{{ category.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- 分类信息 -->
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <h1><i class="bi bi-{{ category.icon or 'palette' }}"></i> {{ category.name }}</h1>
+            {% if category.description %}
+            <p class="text-muted">{{ category.description }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-md-end">
+            <p class="text-muted">共 {{ pagination.total }} 个网站</p>
+        </div>
+    </div>
+
+    <!-- 网站列表 -->
+    {% if websites %}
+    <div class="row">
+        {% for website in websites %}
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card website-card">
+                {% if website.screenshots %}
+                <img src="{{ website.screenshots[0].url }}" class="card-img-top" alt="{{ website.name }}">
+                {% else %}
+                <img src="https://via.placeholder.com/400x200?text=No+Screenshot" class="card-img-top" alt="{{ website.name }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ website.name }}</h5>
+                    <p class="card-text">{{ website.description|truncate(60) if website.description else '' }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted"><i class="bi bi-eye"></i> {{ website.views }}</span>
+                        <a href="{{ url_for('web.website_detail', id=website.id) }}" class="btn btn-sm btn-primary">查看</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页 -->
+    {% if pagination.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('web.category_detail', id=category.id, page=pagination.page-1) }}">上一页</a>
+            </li>
+            {% endif %}
+
+            {% for p in range(1, pagination.pages + 1) %}
+            <li class="page-item {{ 'active' if p == pagination.page else '' }}">
+                <a class="page-link" href="{{ url_for('web.category_detail', id=category.id, page=p) }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('web.category_detail', id=category.id, page=pagination.page+1) }}">下一页</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+        <p class="text-muted mt-3">该分类下暂无网站</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

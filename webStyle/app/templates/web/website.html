@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ website.name }} - WebStyle{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <!-- 面包屑 -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('web.index') }}">首页</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('web.categories') }}">分类</a></li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('web.category_detail', id=website.category.id) }}">{{ website.category.name }}</a>
+            </li>
+            <li class="breadcrumb-item active">{{ website.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- 左侧：截图 -->
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                {% if website.screenshots %}
+                <div id="screenshotCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for screenshot in website.screenshots %}
+                        <div class="carousel-item {{ 'active' if loop.first else '' }}">
+                            <img src="{{ screenshot.url }}" class="d-block w-100" alt="{{ website.name }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if website.screenshots|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#screenshotCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#screenshotCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                    {% endif %}
+                </div>
+                {% else %}
+                <img src="https://via.placeholder.com/800x400?text=No+Screenshot" class="card-img-top" alt="{{ website.name }}">
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 右侧：信息 -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">{{ website.name }}</h2>
+
+                    <div class="mb-3">
+                        <a href="{{ website.url }}" target="_blank" class="btn btn-primary w-100">
+                            <i class="bi bi-box-arrow-up-right"></i> 访问网站
+                        </a>
+                    </div>
+
+                    <hr>
+
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <h4 class="mb-0">{{ website.views }}</h4>
+                            <small class="text-muted">浏览</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="mb-0">{{ website.likes }}</h4>
+                            <small class="text-muted">点赞</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="mb-0">{{ website.favorites }}</h4>
+                            <small class="text-muted">收藏</small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <p><strong>分类：</strong>
+                        <a href="{{ url_for('web.category_detail', id=website.category.id) }}">{{ website.category.name }}</a>
+                    </p>
+
+                    {% if website.industry %}
+                    <p><strong>行业：</strong> {{ website.industry }}</p>
+                    {% endif %}
+
+                    {% if website.color_scheme %}
+                    <p><strong>配色：</strong> {{ website.color_scheme }}</p>
+                    {% endif %}
+
+                    {% if website.layout_type %}
+                    <p><strong>布局：</strong> {{ website.layout_type }}</p>
+                    {% endif %}
+
+                    {% if website.tags %}
+                    <p><strong>标签：</strong></p>
+                    <div>
+                        {% for tag in website.tags %}
+                        <span class="tag">{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 描述 -->
+    {% if website.description %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">网站描述</h5>
+            <p class="card-text">{{ website.description }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 相似网站 -->
+    {% if similar_websites %}
+    <div class="mt-5">
+        <h3 class="mb-4"><i class="bi bi-collection"></i> 相似网站</h3>
+        <div class="row">
+            {% for sw in similar_websites %}
+            <div class="col-md-2 col-sm-4 mb-3">
+                <a href="{{ url_for('web.website_detail', id=sw.id) }}" class="text-decoration-none">
+                    <div class="card">
+                        {% if sw.screenshots %}
+                        <img src="{{ sw.screenshots[0].url }}" class="card-img-top" alt="{{ sw.name }}" style="height: 100px; object-fit: cover;">
+                        {% else %}
+                        <img src="https://via.placeholder.com/200x100?text=No+Image" class="card-img-top" alt="{{ sw.name }}">
+                        {% endif %}
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-0 text-truncate">{{ sw.name }}</h6>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

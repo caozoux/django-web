@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}首页 - WebStyle{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container text-center">
+        <h1>发现网站设计灵感</h1>
+        <p class="lead mb-4">浏览和探索主流网站的设计风格，为您的项目找到完美的视觉参考</p>
+        <div class="search-box">
+            <form action="{{ url_for('web.search') }}" method="GET" class="d-flex">
+                <input type="text" class="form-control me-2" name="keyword" placeholder="搜索网站风格...">
+                <button type="submit" class="btn btn-light">搜索</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- 统计概览 -->
+<section class="container mb-5">
+    <div class="row">
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card stat-card">
+                <h3>{{ stats.total_websites or 0 }}</h3>
+                <p>网站收录</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card stat-card">
+                <h3>{{ stats.total_categories or 0 }}</h3>
+                <p>风格分类</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card stat-card">
+                <h3>{{ stats.total_users or 0 }}</h3>
+                <p>注册用户</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card stat-card">
+                <h3>{{ stats.total_views or 0 }}</h3>
+                <p>总浏览量</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 风格分类 -->
+<section class="container mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-grid"></i> 风格分类</h2>
+        <a href="{{ url_for('web.categories') }}" class="btn btn-outline-primary">查看全部</a>
+    </div>
+    <div class="row">
+        {% for category in categories %}
+        <div class="col-md-3 col-sm-6 mb-4">
+            <a href="{{ url_for('web.category_detail', id=category.id) }}" class="text-decoration-none">
+                <div class="card category-card">
+                    <div class="icon">
+                        <i class="bi bi-{{ category.icon or 'palette' }}"></i>
+                    </div>
+                    <h5>{{ category.name }}</h5>
+                    <p class="text-muted mb-0">{{ category.website_count }} 个网站</p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- 热门网站 -->
+<section class="container mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-fire"></i> 热门网站</h2>
+        <a href="{{ url_for('web.search', order_by='views') }}" class="btn btn-outline-primary">查看更多</a>
+    </div>
+    <div class="row">
+        {% for website in hot_websites %}
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card website-card">
+                {% if website.screenshots %}
+                <img src="{{ website.screenshots[0].url }}" class="card-img-top" alt="{{ website.name }}">
+                {% else %}
+                <img src="https://via.placeholder.com/400x200?text=No+Screenshot" class="card-img-top" alt="{{ website.name }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ website.name }}</h5>
+                    <p class="card-text">{{ website.description|truncate(80) if website.description else '' }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted"><i class="bi bi-eye"></i> {{ website.views }}</span>
+                        <a href="{{ url_for('web.website_detail', id=website.id) }}" class="btn btn-sm btn-primary">查看详情</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- 最新添加 -->
+<section class="container mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-clock"></i> 最新添加</h2>
+        <a href="{{ url_for('web.search', order_by='newest') }}" class="btn btn-outline-primary">查看更多</a>
+    </div>
+    <div class="row">
+        {% for website in recent_websites %}
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card website-card">
+                {% if website.screenshots %}
+                <img src="{{ website.screenshots[0].url }}" class="card-img-top" alt="{{ website.name }}">
+                {% else %}
+                <img src="https://via.placeholder.com/400x200?text=No+Screenshot" class="card-img-top" alt="{{ website.name }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ website.name }}</h5>
+                    <p class="card-text">{{ website.description|truncate(80) if website.description else '' }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="tag">{{ website.category.name if website.category else '未分类' }}</span>
+                        <a href="{{ url_for('web.website_detail', id=website.id) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

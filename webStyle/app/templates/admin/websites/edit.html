@@ -1,0 +1,94 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}编辑网站 - 管理后台{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">编辑网站</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="name" class="form-label">网站名称 *</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ website.name }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="url" class="form-label">网站URL *</label>
+                    <input type="url" class="form-control" id="url" name="url" value="{{ website.url }}" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="description" class="form-label">描述</label>
+                <textarea class="form-control" id="description" name="description" rows="3">{{ website.description or '' }}</textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="category_id" class="form-label">分类 *</label>
+                    <select class="form-select" id="category_id" name="category_id" required>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {{ 'selected' if website.category_id == cat.id else '' }}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="status" class="form-label">状态</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="active" {{ 'selected' if website.status == 'active' else '' }}>活跃</option>
+                        <option value="pending" {{ 'selected' if website.status == 'pending' else '' }}>待审核</option>
+                        <option value="inactive" {{ 'selected' if website.status == 'inactive' else '' }}>停用</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="industry" class="form-label">行业</label>
+                    <select class="form-select" id="industry" name="industry">
+                        <option value="">请选择</option>
+                        {% for industry in ['电商', '社交', '工具', '资讯', '教育', '娱乐', '金融', '其他'] %}
+                        <option value="{{ industry }}" {{ 'selected' if website.industry == industry else '' }}>{{ industry }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="color_scheme" class="form-label">配色方案</label>
+                    <select class="form-select" id="color_scheme" name="color_scheme">
+                        <option value="">请选择</option>
+                        {% for color in ['cold', 'warm', 'neutral', 'dark', 'colorful'] %}
+                        <option value="{{ color }}" {{ 'selected' if website.color_scheme == color else '' }}>{{ color }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="layout_type" class="form-label">布局类型</label>
+                    <select class="form-select" id="layout_type" name="layout_type">
+                        <option value="">请选择</option>
+                        {% for layout in ['centered', 'split', 'fullscreen', 'card', 'grid'] %}
+                        <option value="{{ layout }}" {{ 'selected' if website.layout_type == layout else '' }}>{{ layout }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="tags" class="form-label">标签（用逗号分隔）</label>
+                <input type="text" class="form-control" id="tags" name="tags" value="{{ website.tags|map(attribute='name')|list|join(', ') }}">
+            </div>
+
+            <div class="mb-3">
+                <p class="text-muted">
+                    浏览量: {{ website.views }} | 点赞: {{ website.likes }} | 收藏: {{ website.favorites }}
+                </p>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">保存</button>
+                <a href="{{ url_for('admin.websites') }}" class="btn btn-outline-secondary">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
