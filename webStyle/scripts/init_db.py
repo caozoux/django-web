@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-数据库初始化脚本
+数据库初始化脚本（使用SQLite）
 """
 import os
 import sys
@@ -14,6 +14,7 @@ from app.models import User, Category, Website, Tag, Favorite, ViewHistory
 
 def init_db():
     """初始化数据库"""
+    # 使用开发配置（SQLite）
     app = create_app('development')
 
     with app.app_context():

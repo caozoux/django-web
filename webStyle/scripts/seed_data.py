@@ -5,12 +5,21 @@
 import os
 import sys
 import random
+import re
 
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app, db
 from app.models import User, Category, Website, Tag
+
+
+def slugify(text):
+    """简单的 slug 生成函数"""
+    text = text.lower()
+    text = re.sub(r'[^a-z0-9\u4e00-\u9fff]+', '-', text)
+    text = text.strip('-')
+    return text
 
 
 # 初始分类数据
@@ -44,7 +53,7 @@ WEBSITES = [
 ]
 
 # 标签数据
-TAGS = ['响应式', '动画', '交互', '干净', '现代', '创意', '企业', '电商', '社交', '工具']
+TAGS = ['responsive', 'animation', 'interactive', 'clean', 'modern', 'creative', 'enterprise', 'ecommerce', 'social', 'tools']
 
 
 def run_seed():
@@ -72,8 +81,7 @@ def run_seed():
         for tag_name in TAGS:
             existing = Tag.query.filter_by(name=tag_name).first()
             if not existing:
-                import slugify
-                tag = Tag(name=tag_name, slug=slugify.slugify(tag_name))
+                tag = Tag(name=tag_name, slug=slugify(tag_name))
                 db.session.add(tag)
                 tag_map[tag_name] = tag
             else:
@@ -92,7 +100,7 @@ def run_seed():
                     website = Website(
                         name=web_data['name'],
                         url=web_data['url'],
-                        description=f'{web_data["name"]}的官方网站',
+                        description=f'{web_data["name"]} official website',
                         category_id=category.id,
                         status='active',
                         views=random.randint(100, 10000),
@@ -111,6 +119,11 @@ def run_seed():
         print(f'Created {len(WEBSITES)} websites.')
 
         print('Data seeding completed.')
+        print('\nSummary:')
+        print(f'  Categories: {Category.query.count()}')
+        print(f'  Tags: {Tag.query.count()}')
+        print(f'  Websites: {Website.query.count()}')
+        print(f'  Admin: admin / admin123')
 
 
 if __name__ == '__main__':

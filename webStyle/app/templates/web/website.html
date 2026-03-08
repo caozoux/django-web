@@ -39,7 +39,9 @@
                     {% endif %}
                 </div>
                 {% else %}
-                <img src="https://via.placeholder.com/800x400?text=No+Screenshot" class="card-img-top" alt="{{ website.name }}">
+                <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:400px;">
+                    <span class="text-muted"><i class="bi bi-image" style="font-size:3rem;"></i></span>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -126,7 +128,9 @@
                         {% if sw.screenshots %}
                         <img src="{{ sw.screenshots[0].url }}" class="card-img-top" alt="{{ sw.name }}" style="height: 100px; object-fit: cover;">
                         {% else %}
-                        <img src="https://via.placeholder.com/200x100?text=No+Image" class="card-img-top" alt="{{ sw.name }}">
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:100px;">
+                            <span class="text-muted"><i class="bi bi-image" style="font-size:1.5rem;"></i></span>
+                        </div>
                         {% endif %}
                         <div class="card-body p-2">
                             <h6 class="card-title mb-0 text-truncate">{{ sw.name }}</h6>

@@ -3,7 +3,7 @@
 """
 from typing import List, Dict
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from app.extensions import db, cache
 from app.models.website import Website
 from app.models.category import Category

@@ -9,6 +9,7 @@ class Category(BaseModel):
     """风格分类模型"""
     __tablename__ = 'categories'
 
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), unique=True, nullable=False, index=True)
     description = db.Column(db.Text)
@@ -17,15 +18,20 @@ class Category(BaseModel):
     sort_order = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
 
-    # 自引用关系（子分类）
-    children = db.relationship(
-        'Category',
-        backref=db.backref('parent', remote_side=[id]),
-        lazy='dynamic'
-    )
-
     # 网站关系
     websites = db.relationship('Website', back_populates='category', lazy='dynamic')
+
+    @property
+    def children(self):
+        """获取子分类"""
+        return Category.query.filter_by(parent_id=self.id, is_active=True).order_by(Category.sort_order).all()
+
+    @property
+    def parent(self):
+        """获取父分类"""
+        if self.parent_id:
+            return Category.query.get(self.parent_id)
+        return None
 
     @property
     def website_count(self):
@@ -35,18 +41,18 @@ class Category(BaseModel):
     def get_path(self):
         """获取分类路径（面包屑）"""
         path = [self.name]
-        parent = self.parent
-        while parent:
-            path.append(parent.name)
-            parent = parent.parent
+        p = self.parent
+        while p:
+            path.append(p.name)
+            p = p.parent
         return ' > '.join(reversed(path))
 
     def get_all_children(self):
         """获取所有子分类（递归）"""
-        children = list(self.children)
+        children_list = self.children
         for child in self.children:
-            children.extend(child.get_all_children())
-        return children
+            children_list.extend(child.get_all_children())
+        return children_list
 
     def to_dict(self):
         """转换为字典"""

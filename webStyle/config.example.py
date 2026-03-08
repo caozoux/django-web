@@ -24,9 +24,6 @@ class Config:
         'pool_pre_ping': True
     }
 
-    # Redis配置
-    REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-
     # JWT配置
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
@@ -36,8 +33,7 @@ class Config:
     JWT_COOKIE_CSRF_PROTECT = True
 
     # 缓存配置
-    CACHE_TYPE = 'redis'
-    CACHE_REDIS_URL = REDIS_URL
+    CACHE_TYPE = 'SimpleCache'
     CACHE_DEFAULT_TIMEOUT = 300
     CACHE_KEY_PREFIX = 'webstyle_'
 
@@ -45,17 +41,6 @@ class Config:
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app/static/uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-
-    # Celery配置
-    CELERY_BROKER_URL = REDIS_URL
-    CELERY_RESULT_BACKEND = REDIS_URL
-    CELERY_TASK_SERIALIZER = 'json'
-    CELERY_RESULT_SERIALIZER = 'json'
-    CELERY_ACCEPT_CONTENT = ['json']
-    CELERY_TIMEZONE = 'Asia/Shanghai'
-    CELERY_ENABLE_UTC = True
-    CELERY_TASK_TRACK_STARTED = True
-    CELERY_TASK_TIME_LIMIT = 30 * 60  # 30分钟超时
 
     # 分页配置
     ITEMS_PER_PAGE = 20
@@ -87,7 +72,7 @@ class Config:
     CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization']
 
     # 限流配置
-    RATELIMIT_STORAGE_URL = REDIS_URL
+    RATELIMIT_STORAGE_URI = 'memory://'
     RATELIMIT_DEFAULT = '200/hour'
     RATELIMIT_LOGIN = '10/hour'
 

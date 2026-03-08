@@ -11,19 +11,16 @@ class CategoryService:
     """分类业务逻辑服务"""
 
     @staticmethod
-    @cache.cached(timeout=3600, key_prefix='category_all')
     def get_all_categories() -> List[Category]:
         """获取所有分类"""
         return Category.query.order_by(Category.sort_order).all()
 
     @staticmethod
-    @cache.cached(timeout=3600, key_prefix='category_active')
     def get_active_categories() -> List[Category]:
         """获取所有活跃分类"""
         return Category.query.filter_by(is_active=True).order_by(Category.sort_order).all()
 
     @staticmethod
-    @cache.cached(timeout=3600, key_prefix='category_root')
     def get_root_categories() -> List[Category]:
         """获取顶级分类"""
         return Category.query.filter_by(

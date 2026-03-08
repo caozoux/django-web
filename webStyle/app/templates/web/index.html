@@ -83,7 +83,9 @@
                 {% if website.screenshots %}
                 <img src="{{ website.screenshots[0].url }}" class="card-img-top" alt="{{ website.name }}">
                 {% else %}
-                <img src="https://via.placeholder.com/400x200?text=No+Screenshot" class="card-img-top" alt="{{ website.name }}">
+                <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:200px;">
+                    <span class="text-muted"><i class="bi bi-image" style="font-size:2rem;"></i></span>
+                </div>
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ website.name }}</h5>
@@ -112,7 +114,9 @@
                 {% if website.screenshots %}
                 <img src="{{ website.screenshots[0].url }}" class="card-img-top" alt="{{ website.name }}">
                 {% else %}
-                <img src="https://via.placeholder.com/400x200?text=No+Screenshot" class="card-img-top" alt="{{ website.name }}">
+                <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:200px;">
+                    <span class="text-muted"><i class="bi bi-image" style="font-size:2rem;"></i></span>
+                </div>
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title">{{ website.name }}</h5>

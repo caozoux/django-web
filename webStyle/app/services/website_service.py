@@ -68,7 +68,6 @@ class WebsiteService:
         return Pagination(query, page, per_page)
 
     @staticmethod
-    @cache.cached(timeout=3600, key_prefix='website_hot')
     def get_hot_websites(limit: int = 10) -> List[Website]:
         """获取热门网站"""
         return Website.query.filter_by(status='active')\
@@ -78,7 +77,6 @@ class WebsiteService:
             .all()
 
     @staticmethod
-    @cache.cached(timeout=1800, key_prefix='website_recent')
     def get_recent_websites(limit: int = 10) -> List[Website]:
         """获取最新网站"""
         return Website.query.filter_by(status='active')\
