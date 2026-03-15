@@ -5,41 +5,46 @@ import './TaskList.css'
 const initialTasks = [
   {
     id: 1,
-    title: '项目规划',
+    title: '任务',
     expanded: true,
-    subtasks: [
-      { id: 101, title: '需求分析', completed: false },
-      { id: 102, title: '技术选型', completed: true },
-      { id: 103, title: '制定计划', completed: false },
-    ]
-  },
-  {
-    id: 2,
-    title: '前端开发',
-    expanded: false,
-    subtasks: [
-      { id: 201, title: '搭建项目结构', completed: true },
-      { id: 202, title: '实现组件', completed: false },
-      { id: 203, title: '样式优化', completed: false },
-    ]
-  },
-  {
-    id: 3,
-    title: '后端开发',
-    expanded: false,
-    subtasks: [
-      { id: 301, title: 'API 设计', completed: false },
-      { id: 302, title: '数据库设计', completed: false },
-    ]
-  },
-  {
-    id: 4,
-    title: '测试与部署',
-    expanded: false,
-    subtasks: [
-      { id: 401, title: '单元测试', completed: false },
-      { id: 402, title: '集成测试', completed: false },
-      { id: 403, title: '部署上线', completed: false },
+    children: [
+      {
+        id: 11,
+        title: '任务需求汇总',
+        expanded: false,
+        subtasks: [
+          { id: 111, title: '需求1', completed: false },
+          { id: 112, title: '需求2', completed: false },
+        ]
+      },
+      {
+        id: 12,
+        title: '架构设计与实现',
+        expanded: false,
+        subtasks: []
+      },
+      {
+        id: 2,
+        title: '子任务',
+        expanded: true,
+        isGroup: true,
+        subtasks: [
+          { id: 201, title: '搭建项目结构', completed: true },
+          { id: 202, title: '实现组件', completed: false },
+          { id: 203, title: '样式优化', completed: false },
+        ]
+      },
+      {
+        id: 3,
+        title: '测试验收',
+        expanded: true,
+        isGroup: true,
+        subtasks: [
+          { id: 301, title: '功能测试', completed: false },
+          { id: 302, title: '性能测试', completed: false },
+          { id: 303, title: '验收确认', completed: false },
+        ]
+      }
     ]
   },
 ]
@@ -51,6 +56,9 @@ function TaskList() {
     { id: 1, type: 'system', text: '欢迎使用聊天助手，有什么可以帮助您的？' }
   ])
   const [inputValue, setInputValue] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskDesc, setNewTaskDesc] = useState('')
   const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -67,13 +75,13 @@ function TaskList() {
     ))
   }
 
-  const toggleSubtask = (taskId, subtaskId) => {
+  const toggleChild = (taskId, childId) => {
     setTasks(tasks.map(task => {
-      if (task.id === taskId) {
+      if (task.id === taskId && task.children) {
         return {
           ...task,
-          subtasks: task.subtasks.map(st =>
-            st.id === subtaskId ? { ...st, completed: !st.completed } : st
+          children: task.children.map(child =>
+            child.id === childId ? { ...child, expanded: !child.expanded } : child
           )
         }
       }
@@ -81,13 +89,34 @@ function TaskList() {
     }))
   }
 
-  const selectSubtask = (task, subtask) => {
-    setSelectedTask({ task, subtask })
-    // 添加任务选择提示消息
+  const toggleSubtask = (taskId, childId, subtaskId) => {
+    setTasks(tasks.map(task => {
+      if (task.id === taskId && task.children) {
+        return {
+          ...task,
+          children: task.children.map(child => {
+            if (child.id === childId) {
+              return {
+                ...child,
+                subtasks: child.subtasks.map(st =>
+                  st.id === subtaskId ? { ...st, completed: !st.completed } : st
+                )
+              }
+            }
+            return child
+          })
+        }
+      }
+      return task
+    }))
+  }
+
+  const selectSubtask = (task, child, subtask) => {
+    setSelectedTask({ task, child, subtask })
     setMessages(prev => [...prev, {
       id: Date.now(),
       type: 'system',
-      text: `已选择任务: ${task.title} > ${subtask.title}`
+      text: `已选择任务: ${task.title} > ${child.title} > ${subtask.title}`
     }])
   }
 
@@ -110,13 +139,44 @@ function TaskList() {
     }, 500)
   }
 
+  const handleAddTask = () => {
+    if (!newTaskTitle.trim()) return
+
+    const newTask = {
+      id: Date.now(),
+      title: newTaskTitle,
+      expanded: true,
+      subtasks: newTaskDesc.trim() ? [
+        { id: Date.now() + 1, title: newTaskDesc, completed: false }
+      ] : []
+    }
+
+    setTasks([...tasks, newTask])
+    setNewTaskTitle('')
+    setNewTaskDesc('')
+    setShowModal(false)
+
+    // 添加系统消息
+    setMessages(prev => [...prev, {
+      id: Date.now() + 2,
+      type: 'system',
+      text: `已创建新任务: ${newTaskTitle}`
+    }])
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setNewTaskTitle('')
+    setNewTaskDesc('')
+  }
+
   return (
     <div className="task-layout">
       {/* 左侧任务列表 */}
       <div className="task-sidebar">
         <div className="task-header">
           <h3>任务列表</h3>
-          <button className="add-task-btn">+ 新建</button>
+          <button className="add-task-btn" onClick={() => setShowModal(true)}>+ 新建</button>
         </div>
         <div className="task-list">
           {tasks.map(task => (
@@ -128,23 +188,38 @@ function TaskList() {
                 <span className="task-arrow">{task.expanded ? '▼' : '▶'}</span>
                 <span>{task.title}</span>
               </div>
-              {task.expanded && (
-                <div className="subtask-list">
-                  {task.subtasks.map(subtask => (
-                    <div
-                      key={subtask.id}
-                      className={`subtask-item ${subtask.completed ? 'completed' : ''} ${selectedTask?.subtask.id === subtask.id ? 'selected' : ''}`}
-                      onClick={() => selectSubtask(task, subtask)}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={subtask.completed}
-                        onChange={(e) => {
-                          e.stopPropagation()
-                          toggleSubtask(task.id, subtask.id)
-                        }}
-                      />
-                      <span>{subtask.title}</span>
+              {task.expanded && task.children && (
+                <div className="child-list">
+                  {task.children.map(child => (
+                    <div key={child.id} className={`child-item ${child.isGroup ? 'is-group' : ''}`}>
+                      <div
+                        className={`child-title ${child.expanded ? 'expanded' : ''}`}
+                        onClick={() => toggleChild(task.id, child.id)}
+                      >
+                        <span className="task-arrow">{child.expanded ? '▼' : '▶'}</span>
+                        <span>{child.title}</span>
+                      </div>
+                      {child.expanded && child.subtasks && child.subtasks.length > 0 && (
+                        <div className="subtask-list">
+                          {child.subtasks.map(subtask => (
+                            <div
+                              key={subtask.id}
+                              className={`subtask-item ${subtask.completed ? 'completed' : ''} ${selectedTask?.subtask.id === subtask.id ? 'selected' : ''}`}
+                              onClick={() => selectSubtask(task, child, subtask)}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={subtask.completed}
+                                onChange={(e) => {
+                                  e.stopPropagation()
+                                  toggleSubtask(task.id, child.id, subtask.id)
+                                }}
+                              />
+                              <span>{subtask.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -160,7 +235,10 @@ function TaskList() {
           {selectedTask ? (
             <div className="task-detail">
               <h2>{selectedTask.subtask.title}</h2>
-              <p className="task-parent">所属任务: {selectedTask.task.title}</p>
+              <p className="task-parent">
+                所属任务: {selectedTask.task.title}
+                {selectedTask.child && ` > ${selectedTask.child.title}`}
+              </p>
               <div className="task-status">
                 状态: {selectedTask.subtask.completed ? '已完成' : '进行中'}
               </div>
@@ -199,6 +277,43 @@ function TaskList() {
           </div>
         </div>
       </div>
+
+      {/* 新建任务对话框 */}
+      {showModal && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>新建任务</h3>
+              <button className="modal-close" onClick={closeModal}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>任务名称</label>
+                <input
+                  type="text"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  placeholder="输入任务名称..."
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label>任务描述</label>
+                <textarea
+                  value={newTaskDesc}
+                  onChange={(e) => setNewTaskDesc(e.target.value)}
+                  placeholder="输入任务描述（可选）..."
+                  rows={4}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-cancel" onClick={closeModal}>取消</button>
+              <button className="btn-confirm" onClick={handleAddTask}>确定</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
