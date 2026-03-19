@@ -633,6 +633,19 @@
   color: #999;
 }
 
+.save-status {
+  font-size: 0.8rem;
+}
+
+.save-status .saving {
+  color: #999;
+}
+
+.save-status .saved {
+  color: #52c41a;
+  font-weight: 500;
+}
+
 .btn-save {
   padding: 8px 20px;
   background: #0066ff;
@@ -1034,4 +1047,37 @@
 .ai-text {
   color: #666;
   margin: 4px 0;
+}
+
+/* 趋势分析对话框样式 */
+.trend-modal {
+  width: 650px;
+  max-width: 95%;
+}
+
+.trend-command-box {
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.trend-command-box label {
+  display: block;
+  color: #888;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.trend-command {
+  color: #4ec9b0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  padding: 12px;
+  background: #2d2d2d;
+  border-radius: 6px;
+  overflow-x: auto;
 }

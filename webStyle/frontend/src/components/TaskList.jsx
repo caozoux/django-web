@@ -69,7 +69,11 @@ function TaskList() {
   const [chartData, setChartData] = useState(null)
   const [aiAnalysis, setAiAnalysis] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [showTrendDialog, setShowTrendDialog] = useState(false)
+  const [trendSummaryContent, setTrendSummaryContent] = useState('')
+  const [saveStatus, setSaveStatus] = useState('') // 保存状态: '' | 'saving' | 'saved'
   const messagesEndRef = useRef(null)
+  const autoSaveTimerRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -78,6 +82,55 @@ function TaskList() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // 自动保存 - 防抖 1.5 秒后保存
+  useEffect(() => {
+    // 没有选中的任务或内容没变化时不保存
+    if (!selectedTask || !editContent) return
+
+    // 清除之前的定时器
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
+
+    // 设置新的定时器
+    setSaveStatus('saving')
+    autoSaveTimerRef.current = setTimeout(() => {
+      // 执行保存
+      setTasks(prevTasks => prevTasks.map(task => {
+        if (task.id === selectedTask.task.id && task.children) {
+          return {
+            ...task,
+            children: task.children.map(child => {
+              if (child.id === selectedTask.child.id) {
+                return {
+                  ...child,
+                  subtasks: child.subtasks.map(st =>
+                    st.id === selectedTask.subtask.id
+                      ? { ...st, description: editContent }
+                      : st
+                  )
+                }
+              }
+              return child
+            })
+          }
+        }
+        return task
+      }))
+
+      setSaveStatus('saved')
+      // 2秒后清除保存状态
+      setTimeout(() => setSaveStatus(''), 2000)
+    }, 1500)
+
+    // 清理函数
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current)
+      }
+    }
+  }, [editContent, selectedTask?.subtask.id])
 
   const toggleTask = (taskId) => {
     setTasks(tasks.map(task =>
@@ -478,7 +531,19 @@ function TaskList() {
                               className="chart-icon"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                analyzeTaskData(task.id, child.id)
+                                // 使用已保存的汇总结果（如果当前选中的是这个 child 的汇总）
+                                let summary
+                                if (selectedTask?.child.id === child.id && selectedTask?.subtask.id === 'summary') {
+                                  // 使用编辑框中已保存的汇总内容
+                                  summary = editContent
+                                } else {
+                                  // 否则重新生成汇总内容
+                                  summary = child.subtasks.map((st) => {
+                                    return `【${st.title}】\n${st.description || '暂无描述'}`
+                                  }).join('\n\n---\n\n')
+                                }
+                                setTrendSummaryContent(summary)
+                                setShowTrendDialog(true)
                               }}
                               title="趋势分析"
                             >
@@ -716,6 +781,10 @@ function TaskList() {
                 placeholder="请输入需求描述..."
               />
               <div className="editor-footer">
+                <span className="save-status">
+                  {saveStatus === 'saving' && <span className="saving">保存中...</span>}
+                  {saveStatus === 'saved' && <span className="saved">✓ 已自动保存</span>}
+                </span>
                 <span className="char-count">{editContent.length} 字</span>
                 <button
                   className="btn-save"
@@ -769,7 +838,7 @@ function TaskList() {
             <div className="chat-messages">
               {messages.map(msg => (
                 <div key={msg.id} className={`chat-message ${msg.type}`}>
-                  <div className="message-bubble">{msg.text}</div>
+                  <div className="message-bubble" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
                 </div>
               ))}
               <div ref={messagesEndRef} />
@@ -841,6 +910,78 @@ function TaskList() {
             <div className="modal-footer">
               <button className="btn-cancel" onClick={cancelDelete}>取消</button>
               <button className="btn-delete" onClick={confirmDelete}>删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 趋势分析对话框 */}
+      {showTrendDialog && (
+        <div className="modal-overlay" onClick={() => setShowTrendDialog(false)}>
+          <div className="modal trend-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>📈 趋势分析</h3>
+              <button className="modal-close" onClick={() => setShowTrendDialog(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="trend-command-box">
+                <label>Docker 命令：</label>
+                <pre className="trend-command">
+docker run -it --rm \
+    -e GLM_API_KEY=$GLM_API_KEY \
+    ai-agent -m invoke -p "{trendSummaryContent}"
+                </pre>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn-confirm"
+                onClick={async () => {
+                  setShowTrendDialog(false)
+                  setMessages(prev => [...prev, {
+                    id: Date.now(),
+                    type: 'system',
+                    text: '正在执行 AI 分析...'
+                  }])
+
+                  try {
+                    const response = await fetch('/api/ai-analyze', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        requirements: trendSummaryContent
+                      })
+                    })
+
+                    const data = await response.json()
+
+                    if (data.success) {
+                      setMessages(prev => [...prev, {
+                        id: Date.now(),
+                        type: 'bot',
+                        text: data.analysis
+                      }])
+                    } else {
+                      setMessages(prev => [...prev, {
+                        id: Date.now(),
+                        type: 'system',
+                        text: `分析失败: ${data.error || data.details}`
+                      }])
+                    }
+                  } catch (error) {
+                    setMessages(prev => [...prev, {
+                      id: Date.now(),
+                      type: 'system',
+                      text: `请求失败: ${error.message}`
+                    }])
+                  }
+                }}
+              >
+                运行
+              </button>
+              <button className="btn-cancel" onClick={() => setShowTrendDialog(false)}>关闭</button>
             </div>
           </div>
         </div>
