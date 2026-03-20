@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { marked } from 'marked'
 import './TaskList.css'
 
 // 示例任务数据
@@ -72,12 +73,40 @@ function TaskList() {
   const [showTrendDialog, setShowTrendDialog] = useState(false)
   const [trendSummaryContent, setTrendSummaryContent] = useState('')
   const [saveStatus, setSaveStatus] = useState('') // 保存状态: '' | 'saving' | 'saved'
+  const [copySuccess, setCopySuccess] = useState(false) // 复制成功状态
+  const [copiedMsgId, setCopiedMsgId] = useState(null) // 记录哪条消息被复制了
+  const [aiMessages, setAiMessages] = useState([
+    { id: 1, type: 'system', text: '🤖 AI 分析助手，点击启动或输入问题进行分析...' }
+  ])
+  const [aiInputValue, setAiInputValue] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiStarted, setAiStarted] = useState(false)
   const messagesEndRef = useRef(null)
+  const aiMessagesEndRef = useRef(null)
   const autoSaveTimerRef = useRef(null)
+
+  // 配置 marked 选项
+  marked.setOptions({
+    breaks: true, // 支持 GFM 换行
+    gfm: true, // 启用 GitHub Flavored Markdown
+  })
+
+  // 渲染 Markdown 内容
+  const renderMarkdown = (text) => {
+    return { __html: marked(text) }
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  const scrollToAiBottom = () => {
+    aiMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToAiBottom()
+  }, [aiMessages])
 
   useEffect(() => {
     scrollToBottom()
@@ -378,6 +407,23 @@ function TaskList() {
     return analysis
   }
 
+  // 复制到剪贴板
+  const copyToClipboard = async (text, msgId = null) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopySuccess(true)
+      if (msgId !== null) {
+        setCopiedMsgId(msgId)
+      }
+      setTimeout(() => {
+        setCopySuccess(false)
+        setCopiedMsgId(null)
+      }, 2000)
+    } catch (err) {
+      console.error('复制失败:', err)
+    }
+  }
+
   const startEditTitle = (taskId, childId, subtaskId, currentTitle) => {
     setEditingId(subtaskId)
     setEditingTitle(currentTitle)
@@ -440,6 +486,124 @@ function TaskList() {
         text: `收到您的消息: "${inputValue}"。这是一个模拟回复。`
       }])
     }, 500)
+  }
+
+  // 启动 AI 分析
+  const handleStartAiAnalysis = async () => {
+    if (aiLoading || aiStarted) return
+
+    setAiStarted(true)
+    setAiLoading(true)
+
+    // 收集所有需求汇总内容
+    const allRequirements = []
+    tasks.forEach(task => {
+      if (task.children) {
+        task.children.forEach(child => {
+          if (!child.isGroup && child.subtasks) {
+            child.subtasks.forEach(st => {
+              if (st.description && st.description.trim()) {
+                allRequirements.push(`【${st.title}】\n${st.description}`)
+              }
+            })
+          }
+        })
+      }
+    })
+
+    const summaryContent = allRequirements.length > 0
+      ? allRequirements.join('\n\n---\n\n')
+      : '暂无需求内容'
+
+    setAiMessages(prev => [...prev, {
+      id: Date.now(),
+      type: 'system',
+      text: '正在分析所有需求内容...'
+    }])
+
+    try {
+      const response = await fetch('/api/ai-analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requirements: summaryContent
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setAiMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          type: 'bot',
+          text: data.analysis
+        }])
+      } else {
+        setAiMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          type: 'system',
+          text: `分析失败: ${data.error || data.details}`
+        }])
+      }
+    } catch (error) {
+      setAiMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        type: 'system',
+        text: `请求失败: ${error.message}`
+      }])
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  // AI 分析聊天框发送消息
+  const handleAiSendMessage = async (e) => {
+    e.preventDefault()
+    if (!aiInputValue.trim() || aiLoading) return
+
+    const userMessage = { id: Date.now(), type: 'user', text: aiInputValue }
+    setAiMessages(prev => [...prev, userMessage])
+    const currentInput = aiInputValue
+    setAiInputValue('')
+    setAiLoading(true)
+
+    try {
+      const response = await fetch('/api/ai-analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requirements: currentInput
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setAiMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          type: 'bot',
+          text: data.analysis
+        }])
+      } else {
+        setAiMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          type: 'system',
+          text: `分析失败: ${data.error || data.details}`
+        }])
+      }
+    } catch (error) {
+      setAiMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        type: 'system',
+        text: `请求失败: ${error.message}`
+      }])
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   const handleAddTask = () => {
@@ -732,7 +896,18 @@ function TaskList() {
 
                 {/* AI 分析报告 */}
                 <div className="ai-analysis-section">
-                  <h4>🤖 AI 智能分析</h4>
+                  <div className="ai-analysis-header">
+                    <h4>🤖 AI 智能分析</h4>
+                    {!isAnalyzing && aiAnalysis && (
+                      <button
+                        className={`copy-btn ${copySuccess ? 'copied' : ''}`}
+                        onClick={() => copyToClipboard(aiAnalysis)}
+                        title="复制分析内容"
+                      >
+                        {copySuccess ? '✓ 已复制' : '📋 复制'}
+                      </button>
+                    )}
+                  </div>
                   {isAnalyzing ? (
                     <div className="ai-loading">
                       <div className="loading-spinner"></div>
@@ -838,7 +1013,17 @@ function TaskList() {
             <div className="chat-messages">
               {messages.map(msg => (
                 <div key={msg.id} className={`chat-message ${msg.type}`}>
-                  <div className="message-bubble" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                  <div
+                    className="message-bubble markdown-content"
+                    dangerouslySetInnerHTML={renderMarkdown(msg.text)}
+                  />
+                  <button
+                    className={`msg-copy-btn ${copiedMsgId === msg.id ? 'copied' : ''}`}
+                    onClick={() => copyToClipboard(msg.text, msg.id)}
+                    title="复制"
+                  >
+                    {copiedMsgId === msg.id ? '✓' : '📋'}
+                  </button>
                 </div>
               ))}
               <div ref={messagesEndRef} />
@@ -854,6 +1039,64 @@ function TaskList() {
               <button type="submit" className="chat-send-btn">发送</button>
             </form>
           </div>
+        </div>
+      </div>
+
+      {/* 右侧 AI 分析聊天框 */}
+      <div className="ai-chat-sidebar">
+        <div className="section-header ai-header">
+          <h3>🤖 AI 分析</h3>
+          <button
+            className={`ai-start-btn ${aiLoading ? 'loading' : ''} ${aiStarted ? 'started' : ''}`}
+            onClick={handleStartAiAnalysis}
+            disabled={aiLoading}
+            title="启动AI分析所有需求"
+          >
+            {aiLoading ? '分析中...' : aiStarted ? '重新分析' : '🚀 启动'}
+          </button>
+        </div>
+        <div className="chat-container">
+          <div className="chat-messages">
+            {aiMessages.map(msg => (
+              <div key={msg.id} className={`chat-message ${msg.type}`}>
+                <div
+                  className="message-bubble markdown-content"
+                  dangerouslySetInnerHTML={renderMarkdown(msg.text)}
+                />
+                <button
+                  className={`msg-copy-btn ${copiedMsgId === msg.id ? 'copied' : ''}`}
+                  onClick={() => copyToClipboard(msg.text, msg.id)}
+                  title="复制"
+                >
+                  {copiedMsgId === msg.id ? '✓' : '📋'}
+                </button>
+              </div>
+            ))}
+            {aiLoading && (
+              <div className="chat-message system">
+                <div className="message-bubble">
+                  <div className="ai-loading-inline">
+                    <div className="loading-spinner"></div>
+                    <span>AI 分析中...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={aiMessagesEndRef} />
+          </div>
+          <form className="chat-input-form" onSubmit={handleAiSendMessage}>
+            <input
+              type="text"
+              value={aiInputValue}
+              onChange={(e) => setAiInputValue(e.target.value)}
+              placeholder="输入问题进行分析..."
+              className="chat-input"
+              disabled={aiLoading}
+            />
+            <button type="submit" className="chat-send-btn" disabled={aiLoading}>
+              {aiLoading ? '...' : '发送'}
+            </button>
+          </form>
         </div>
       </div>
 

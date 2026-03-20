@@ -28,10 +28,17 @@ def ai_analyze():
 
         # 执行 Docker 命令调用 AI Agent
         cmd = [
-            'sudo', 'docker', 'run', '-i', '--rm',
+            'docker', 'run', '-i', '--rm',
             '-e', f'GLM_API_KEY={os.environ.get("GLM_API_KEY", "")}',
             'ai-agent', '-m', 'invoke', '-p', prompt
         ]
+
+        # 打印执行命令（脱敏 API Key，避免把敏感信息写入日志）
+        redacted_cmd = cmd.copy()
+        for i, arg in enumerate(redacted_cmd):
+            if isinstance(arg, str) and arg.startswith('GLM_API_KEY='):
+                redacted_cmd[i] = 'GLM_API_KEY=***'
+        print('Executing cmd:', redacted_cmd)
 
         result = subprocess.run(
             cmd,
